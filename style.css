@@ -278,42 +278,51 @@ mjx-stretchy-v { display: none !important; }
 }
 
 /* ==============================================================
-   手机横屏终极补丁：全景大画卷 + 精准高度计算防溢出
+   手机横屏终极修复：彻底告别 vh 塌陷，全景滑动 + 完美高度撑满
    ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    /* 1. 身体变成横向大画卷，允许左右自由滑动整体 */
+    /* 1. 修复移动端浏览器 vh 高度计算 Bug，统统改用绝对 100% */
+    html, body { 
+        height: 100% !important; 
+        width: 100% !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+    }
+    
     body { 
         flex-direction: row !important; 
-        height: 100vh !important; 
         overflow-x: auto !important; 
         overflow-y: hidden !important; 
         -webkit-overflow-scrolling: touch !important;
+        align-items: stretch !important; /* 让内部块级元素自然撑满高度 */
     }
     
-    /* 2. 控制台：定宽，高度满屏，内部可上下滑 */
+    /* 2. 控制台：定宽，高度跟随 body 撑满 */
     .control-panel { 
         width: 300px !important; 
         min-width: 300px !important; 
         flex-shrink: 0 !important; 
-        height: 100vh !important; 
+        height: 100% !important; 
         border-right: 2px solid #cbd5e1 !important;
         border-bottom: none !important;
         overflow-y: auto !important;
     }
     
-    /* 3. 工作区：解除宽度封印，被内部元素自然撑开 */
+    /* 3. 工作区：使用 100% 高度，由内容撑开总宽度 */
     .workspace { 
         flex-direction: row !important; 
-        height: 100vh !important;
+        height: 100% !important;
         flex: none !important; 
-        width: max-content !important; /* 关键：撑开总宽度，拒绝挤压 */
+        width: max-content !important; 
         overflow: visible !important;
         padding: 10px !important; 
+        align-items: stretch !important; /* 核心：强制两个黑白框垂直方向撑满！ */
+        gap: 15px !important;
     }
     
-    /* 4. 源码编辑区：修复高度溢出和滑条消失 */
+    /* 4. 源码编辑区：干掉害人的 calc(vh)，改用 auto 让 flex 去拉伸撑满它 */
     .editor-wrapper { 
-        height: calc(100vh - 20px) !important; /* 关键：100vh 减去上下 padding，防止滑条被挤出屏幕 */
+        height: auto !important; 
         width: 380px !important; 
         min-width: 380px !important; 
         flex-shrink: 0 !important;
@@ -322,29 +331,29 @@ mjx-stretchy-v { display: none !important; }
     }
     .editor-wrapper textarea {
         flex: 1 !important;
-        min-height: 0 !important; /* 极其重要：强制 flex 子项收缩，唤醒原本消失的滑条 */
+        min-height: 0 !important; 
+        height: 100% !important; 
         overflow-y: auto !important; 
     }
     
-    /* 5. 纸张预览区：放开宽度，完整容纳 800px 纸张，杜绝右侧被切！ */
+    /* 5. 纸张预览区：干掉 calc(vh)，同样依靠拉伸撑满全屏高度 */
     .paper-preview-wrapper { 
-        height: calc(100vh - 20px) !important; /* 同样精准减去 padding */
-        width: 860px !important; /* 足够放下 800px 的纸张和边距 */
+        height: auto !important; 
+        width: 860px !important; 
         min-width: 860px !important; 
         flex-shrink: 0 !important;
         display: flex !important;
         flex-direction: column !important;
     }
-    
-    /* 6. 纸张滑动区：恢复独立的上下左右滑动 */
     .paper-scroll-area {
         flex: 1 !important;
-        min-height: 0 !important; /* 唤醒滑条 */
+        min-height: 0 !important; 
+        height: 100% !important; 
         overflow: auto !important; 
         padding: 15px !important;
     }
     
-    /* 7. 纸张保持原尺寸，不强制缩放，保证最高清晰度 */
+    /* 6. 纸张保持 800px 最佳清晰比例，不强制强行缩放，允许用户上下自由滑动 */
     .paper-page { 
         transform: none !important; 
         margin: 0 auto 30px auto !important; 
