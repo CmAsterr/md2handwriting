@@ -25,8 +25,7 @@ const BUILTIN_FONTS = {
         { id: "bt_yunyan", name: "云烟体", url: "./fonts/正文字体/云烟体.ttf" },
         { id: "bt_ximai", name: "喜脉喜欢体", url: "./fonts/正文字体/字制区喜脉喜欢体.ttf" },
         { id: "bt_liguofu", name: "李国夫手写体", url: "./fonts/正文字体/李国夫手写体.ttf" },
-        { id: "bt_qingye", name: "青叶手写体", url: "./fonts/正文字体/青叶手写体.ttf" },
-        { id: "bt_hw_text", name: "Handwritten (参考)", url: "./fonts/正文字体/handwritten.ttf" }
+        { id: "bt_qingye", name: "青叶手写体", url: "./fonts/正文字体/青叶手写体.ttf" }
     ],
     math: [
         { id: "bm_arch", name: "Architects Daughter", url: "./fonts/公式字体/ArchitectsDaughter-Regular.ttf" },
@@ -38,8 +37,7 @@ const BUILTIN_FONTS = {
         { id: "bm_kalam_r", name: "Kalam Regular", url: "./fonts/公式字体/Kalam-Regular.ttf" },
         { id: "bm_neucha", name: "Neucha", url: "./fonts/公式字体/Neucha.ttf" },
         { id: "bm_shadows", name: "Shadows Into Light", url: "./fonts/公式字体/ShadowsIntoLight-Regular.ttf" },
-        { id: "bm_virgil", name: "Virgil", url: "./fonts/公式字体/Virgil.woff2" },
-        { id: "bm_hw_math", name: "Handwritten (公式)", url: "./fonts/公式字体/handwritten.ttf" }
+        { id: "bm_virgil", name: "Virgil", url: "./fonts/公式字体/Virgil.woff2" }
     ]
 };
 
