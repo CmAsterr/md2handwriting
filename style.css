@@ -281,49 +281,59 @@ mjx-stretchy-v { display: none !important; }
    手机横屏专属补丁：强制恢复左右排布，并增加底部横向拉条
    ============================================================== */
 /* ==============================================================
-   手机横屏专属补丁：强制恢复左右排布，解锁全屏手指左右滑动
+   手机横屏专属补丁：彻底解决“局部滑动拦截”与“整体无法滑动”的终极方案
    ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    /* 1. 解锁横向滚动，允许手指左右滑动 */
+    /* 1. 锁死整个外层，只允许特定内部区域滚动 */
     body { 
         flex-direction: row !important; 
         height: 100vh !important; 
-        overflow-x: auto !important;   /* 关键修复：允许横向滚动 */
-        overflow-y: hidden !important; 
+        overflow: hidden !important; 
     }
     
-    /* 2. 控制台固定宽度，绝对不被挤压 */
+    /* 2. 控制台在左侧固定，允许独立上下滚动 */
     .control-panel { 
-        width: 320px !important; 
-        min-width: 320px !important; 
-        flex-shrink: 0 !important;     /* 关键修复：禁止被强制压缩 */
+        width: 280px !important; 
+        min-width: 280px !important; 
+        flex-shrink: 0 !important; 
         height: 100vh !important; 
         border-right: 2px solid #cbd5e1 !important;
         border-bottom: none !important;
+        overflow-y: auto !important;
     }
     
-    /* 3. 工作区固定总宽度，保证文字和纸张绝对清晰 */
+    /* 3. 核心修复：把“工作区”变成真正的【横向大卷轴】！ */
     .workspace { 
         flex-direction: row !important; 
         height: 100vh !important;
-        min-width: 650px !important;   /* 强制足够宽，触发整体横向滚动 */
-        flex-shrink: 0 !important;     /* 关键修复：禁止被压缩 */
-        overflow: hidden !important;
+        flex: 1 !important;
+        overflow-x: auto !important;    /* 接管所有横向滑动 */
+        overflow-y: hidden !important;
+        -webkit-overflow-scrolling: touch !important; /* 开启 iOS 丝滑滚动 */
     }
     
-    /* 4. 源码区与预览区按比例分配 */
+    /* 4. 给源码和预览区赋予“绝对硬度”，死都不缩小，强行撑出外层滚动条 */
     .editor-wrapper { 
         height: 100% !important; 
-        flex: 1 !important;
+        min-width: 350px !important; 
+        flex-shrink: 0 !important;
     }
     .paper-preview-wrapper { 
         height: 100% !important; 
-        flex: 1.2 !important;
+        min-width: 400px !important; 
+        flex-shrink: 0 !important;
     }
     
-    /* 5. 纸张按屏幕高度智能缩放 */
+    /* 5. 没收纸张区的横向滑动权，防止它“吃掉”手指的滑动事件！ */
+    .paper-scroll-area {
+        overflow-x: hidden !important; 
+        overflow-y: auto !important;
+    }
+    
+    /* 6. 消除 800px 造成的居中偏移，改为靠左上角对齐并智能缩放 */
     .paper-page { 
-        transform-origin: top center !important; 
+        transform-origin: top left !important; 
+        margin: 0 !important; /* 强行靠左，防止被左侧隐形裁切 */
         transform: scale(min(1, calc((100vh - 100px) / 1131))) !important; 
         margin-bottom: calc(-1131px * (1 - min(1, calc((100vh - 100px) / 1131))) + 15px) !important;
     }
