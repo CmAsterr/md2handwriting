@@ -278,12 +278,12 @@ mjx-stretchy-v { display: none !important; }
 }
 
 /* ==============================================================
-   手机横屏终极修复：彻底告别 vh 塌陷，全景滑动 + 完美高度撑满
+   手机横屏终极修复：使用 dvh 彻底告别底部黑边与塌陷
    ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    /* 1. 修复移动端浏览器 vh 高度计算 Bug，统统改用绝对 100% */
+    /* 1. 修复移动端浏览器高度 Bug，改用动态视口 dvh */
     html, body { 
-        height: 100% !important; 
+        height: 100dvh !important; 
         width: 100% !important; 
         margin: 0 !important; 
         padding: 0 !important; 
@@ -294,33 +294,33 @@ mjx-stretchy-v { display: none !important; }
         overflow-x: auto !important; 
         overflow-y: hidden !important; 
         -webkit-overflow-scrolling: touch !important;
-        align-items: stretch !important; /* 让内部块级元素自然撑满高度 */
+        align-items: stretch !important; 
     }
     
-    /* 2. 控制台：定宽，高度跟随 body 撑满 */
+    /* 2. 控制台定宽，高度拉满 */
     .control-panel { 
         width: 300px !important; 
         min-width: 300px !important; 
         flex-shrink: 0 !important; 
-        height: 100% !important; 
+        height: 100dvh !important; 
         border-right: 2px solid #cbd5e1 !important;
         border-bottom: none !important;
         overflow-y: auto !important;
     }
     
-    /* 3. 工作区：使用 100% 高度，由内容撑开总宽度 */
+    /* 3. 工作区高度拉满，内容自然撑开横向画卷 */
     .workspace { 
         flex-direction: row !important; 
-        height: 100% !important;
+        height: 100dvh !important;
         flex: none !important; 
         width: max-content !important; 
         overflow: visible !important;
         padding: 10px !important; 
-        align-items: stretch !important; /* 核心：强制两个黑白框垂直方向撑满！ */
+        align-items: stretch !important; 
         gap: 15px !important;
     }
     
-    /* 4. 源码编辑区：干掉害人的 calc(vh)，改用 auto 让 flex 去拉伸撑满它 */
+    /* 4. 源码编辑区与纸张预览区 */
     .editor-wrapper { 
         height: auto !important; 
         width: 380px !important; 
@@ -336,7 +336,6 @@ mjx-stretchy-v { display: none !important; }
         overflow-y: auto !important; 
     }
     
-    /* 5. 纸张预览区：干掉 calc(vh)，同样依靠拉伸撑满全屏高度 */
     .paper-preview-wrapper { 
         height: auto !important; 
         width: 860px !important; 
@@ -352,8 +351,6 @@ mjx-stretchy-v { display: none !important; }
         overflow: auto !important; 
         padding: 15px !important;
     }
-    
-    /* 6. 纸张保持 800px 最佳清晰比例，不强制强行缩放，允许用户上下自由滑动 */
     .paper-page { 
         transform: none !important; 
         margin: 0 auto 30px auto !important; 
