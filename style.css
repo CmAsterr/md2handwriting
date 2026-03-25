@@ -150,7 +150,7 @@ mjx-stretchy-v { display: none !important; }
    【修复核心3：移动端与窄屏响应式适配黑魔法】
    将分栏改为上下堆叠，利用 transform 智能缩放 A4 纸张以适应手机屏幕
    ============================================================== */
-@media (max-width: 950px) {
+@media (max-width: 950px) and (orientation: portrait) {
     /* 将主容器改为竖向排列，允许页面整体滚动 */
     body { 
         flex-direction: column; 
