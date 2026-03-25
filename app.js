@@ -21,7 +21,7 @@ window.isRenderingCanceled = false;
 // 【终极加速】：国内访问 GitHub 极慢，强烈建议使用 jsDelivr CDN。
 // 请将下面链接中的 '你的仓库名' 替换为你真实的仓库名 (比如 markdown-to-handwriting)
 // 如果你还在本地测试，先把这行改成 const CDN_PREFIX = "./"; 即可。
-const CDN_PREFIX = "https://cdn.jsdelivr.net/gh/cmasterr/md2handwriting@main/";
+const CDN_PREFIX = "./";
 
 const BUILTIN_FONTS = {
     text: [
