@@ -43,38 +43,48 @@ const BUILTIN_FONTS = {
     ]
 };
 
-// 动态注入内置字体引擎
-// 动态注入内置字体引擎 (追加彩色内置 Tag)
+// 动态注入内置字体引擎 (极速版：瞬间渲染列表，点击后优雅加载)
 async function initBuiltinFonts() {
     for (let type in BUILTIN_FONTS) {
         const listEl = document.getElementById(type + 'FontList');
         if(!listEl) continue;
 
-        if (BUILTIN_FONTS[type].length > 0) {
-            listEl.style.display = 'block';
-            // ⚠️ 删除了这里原本移除 empty-state 样式的代码，让按钮永远保持灰色倾斜！
-        }
+        if (BUILTIN_FONTS[type].length > 0) { listEl.style.display = 'block'; }
 
         const defaultText = type === 'math' ? '系统默认 (Cambria)' : '系统默认 (楷体)';
         listEl.innerHTML = `<div class="font-item active" data-val="default" onclick="selectFont('${type}', 'default', this)"><span class="font-item-text">${defaultText}</span></div>`;
 
-        BUILTIN_FONTS[type].forEach(async font => {
+        BUILTIN_FONTS[type].forEach(font => {
+            // 1. 注入 CSS (font-display: swap 不阻塞页面加载)
             const style = document.createElement('style');
-            style.textContent = `@font-face { font-family: '${font.id}'; src: url('${font.url}'); }`;
+            style.textContent = `@font-face { font-family: '${font.id}'; src: url('${font.url}'); font-display: swap; }`;
             document.head.appendChild(style);
 
-            try {
-                await document.fonts.load(`16px "${font.id}"`);
-                const item = document.createElement('div');
-                item.className = 'font-item';
-                item.setAttribute('data-val', font.id);
-                // 👇 加入优雅的“内置”标签
-                item.innerHTML = `<span class="font-item-text" style="font-family: '${font.id}', 'Kaiti', serif;"><span class="tag-builtin">内置</span>${font.name}</span>`;
-                item.onclick = function() { selectFont(type, font.id, this); };
-                listEl.appendChild(item);
-            } catch(err) {
-                console.warn(`内置字体加载失败: ${font.name}`, err);
-            }
+            // 2. 瞬间生成 DOM 节点，打破白屏
+            const item = document.createElement('div');
+            item.className = 'font-item';
+            item.setAttribute('data-val', font.id);
+            item.innerHTML = `<span class="font-item-text" style="font-family: '${font.id}', 'Kaiti', serif;"><span class="tag-builtin">内置</span>${font.name}</span>`;
+            
+            // 3. 点击加载逻辑：先变橙色加载中，下好了再排版
+            item.onclick = function() { 
+                const textSpan = this.querySelector('.font-item-text');
+                const originalHtml = textSpan.innerHTML;
+                
+                // 变身橙色加载提示
+                textSpan.innerHTML = `<span class="tag-builtin" style="background:#f59e0b; color:white;">加载中</span>${font.name}`;
+                
+                // 浏览器强制下载
+                document.fonts.load(`16px "${font.id}"`).then(() => {
+                    textSpan.innerHTML = originalHtml;
+                    selectFont(type, font.id, this);
+                }).catch(() => {
+                    textSpan.innerHTML = `<span class="tag-builtin" style="background:#ef4444; color:white;">失败</span>请检查网络`;
+                    setTimeout(() => { textSpan.innerHTML = originalHtml; }, 2000);
+                });
+            };
+            
+            listEl.appendChild(item);
         });
     }
 }

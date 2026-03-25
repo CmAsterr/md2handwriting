@@ -278,80 +278,69 @@ mjx-stretchy-v { display: none !important; }
 }
 
 /* ==============================================================
-   手机横屏终极修复：使用 dvh 彻底告别底部黑边与塌陷
-   ============================================================== */
-/* ==============================================================
-   手机横屏终极修复：物理锚定视口，绝对杜绝任何底部黑边与塌陷
+   手机横屏终极修复：右侧全局统一滚动，取消框内独立滑动
    ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    /* 1. 彻底放弃不靠谱的高度计算，使用 fixed 强行钉死屏幕四角 */
     html {
         position: fixed !important;
-        top: 0 !important; 
-        bottom: 0 !important; 
-        left: 0 !important; 
-        right: 0 !important;
+        top: 0 !important; bottom: 0 !important; 
+        left: 0 !important; right: 0 !important;
         overflow: hidden !important;
         background-color: #1e1e1e !important;
     }
     
-    /* 2. Body 填满被钉死的 html，并化身为横向大卷轴 */
     body {
         position: absolute !important; 
-        top: 0 !important; 
-        bottom: 0 !important; 
-        left: 0 !important; 
-        right: 0 !important;
-        margin: 0 !important; 
-        padding: 0 !important;
-        
+        top: 0 !important; bottom: 0 !important; 
+        left: 0 !important; right: 0 !important;
+        margin: 0 !important; padding: 0 !important;
         display: flex !important;
         flex-direction: row !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-        -webkit-overflow-scrolling: touch !important;
-        align-items: stretch !important; /* 核心：让子元素天地拉满 */
+        overflow: hidden !important; /* Body本身不滚动，权责下放 */
     }
     
-    /* 3. 控制台：宽度锁死，高度被 stretch 自动拉伸到物理边缘 */
+    /* 左侧控制台：固定在左边，允许独立上下滑 */
     .control-panel { 
         width: 300px !important; 
         min-width: 300px !important; 
         flex-shrink: 0 !important; 
-        height: auto !important; /* 放弃指定高度，靠外部拉伸 */
+        height: 100dvh !important; 
         border-right: 2px solid #cbd5e1 !important;
         border-bottom: none !important;
         overflow-y: auto !important;
         margin: 0 !important;
     }
     
-    /* 4. 工作区：无限制撑开横向画卷，高度同样被自动拉满 */
+    /* 右侧工作区：接管一切横向和纵向滑动！ */
     .workspace { 
         display: flex !important;
         flex-direction: row !important; 
-        height: auto !important; 
-        flex: none !important; 
-        width: max-content !important; 
-        overflow: visible !important;
-        padding: 10px !important; 
-        align-items: stretch !important; /* 核心：让内部的两个框天地拉满 */
+        height: 100dvh !important; 
+        flex: 1 !important; 
+        /* 👇 核心：开启右侧统一整体滚动 */
+        overflow: auto !important; 
+        -webkit-overflow-scrolling: touch !important;
+        padding: 15px !important; 
+        align-items: flex-start !important; /* 顶部对齐，让内容自然往下延伸 */
         gap: 15px !important;
         margin: 0 !important;
     }
     
-    /* 5. 源码编辑区与纸张区：全部依赖上下拉伸，精准释放内部滑条 */
+    /* 编辑区与纸张区：禁止内部滚动，依靠内容撑高自身 */
     .editor-wrapper { 
         width: 380px !important; 
         min-width: 380px !important; 
         flex-shrink: 0 !important;
         display: flex !important;
         flex-direction: column !important;
+        height: auto !important; /* 跟随纸张高度一起变长 */
     }
     .editor-wrapper textarea {
         flex: 1 !important;
-        min-height: 0 !important; /* 解除封印，唤醒滚动条 */
-        height: auto !important; 
-        overflow-y: auto !important; 
+        /* 👇 核心：把输入框强行撑到和纸张一样高（默认约1131px） */
+        min-height: 1150px !important; 
+        height: 100% !important; 
+        overflow: visible !important; /* 禁用内部滑条，依靠外层 workspace 统一滑动 */
     }
     
     .paper-preview-wrapper { 
@@ -360,18 +349,17 @@ mjx-stretchy-v { display: none !important; }
         flex-shrink: 0 !important;
         display: flex !important;
         flex-direction: column !important;
+        height: auto !important; 
     }
     .paper-scroll-area {
         flex: 1 !important;
-        min-height: 0 !important; 
         height: auto !important; 
-        overflow: auto !important; 
-        padding: 15px !important;
+        overflow: visible !important; /* 禁用内部滑条 */
+        padding: 0 !important; 
     }
     
-    /* 6. 纸张保持原始极致清晰度，拒绝缩小 */
     .paper-page { 
         transform: none !important; 
-        margin: 0 auto 30px auto !important; 
+        margin: 0 auto !important; 
     }
 }
