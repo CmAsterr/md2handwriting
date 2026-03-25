@@ -278,23 +278,22 @@ mjx-stretchy-v { display: none !important; }
 }
 
 /* ==============================================================
-   手机横屏专属补丁：强制恢复左右排布，并增加底部横向拉条
-   ============================================================== */
-/* ==============================================================
-   手机横屏专属补丁：彻底解决“局部滑动拦截”与“整体无法滑动”的终极方案
+   手机横屏终极补丁：全景大画卷 + 精准高度计算防溢出
    ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    /* 1. 锁死整个外层，只允许特定内部区域滚动 */
+    /* 1. 身体变成横向大画卷，允许左右自由滑动整体 */
     body { 
         flex-direction: row !important; 
         height: 100vh !important; 
-        overflow: hidden !important; 
+        overflow-x: auto !important; 
+        overflow-y: hidden !important; 
+        -webkit-overflow-scrolling: touch !important;
     }
     
-    /* 2. 控制台在左侧固定，允许独立上下滚动 */
+    /* 2. 控制台：定宽，高度满屏，内部可上下滑 */
     .control-panel { 
-        width: 280px !important; 
-        min-width: 280px !important; 
+        width: 300px !important; 
+        min-width: 300px !important; 
         flex-shrink: 0 !important; 
         height: 100vh !important; 
         border-right: 2px solid #cbd5e1 !important;
@@ -302,39 +301,52 @@ mjx-stretchy-v { display: none !important; }
         overflow-y: auto !important;
     }
     
-    /* 3. 核心修复：把“工作区”变成真正的【横向大卷轴】！ */
+    /* 3. 工作区：解除宽度封印，被内部元素自然撑开 */
     .workspace { 
         flex-direction: row !important; 
         height: 100vh !important;
-        flex: 1 !important;
-        overflow-x: auto !important;    /* 接管所有横向滑动 */
-        overflow-y: hidden !important;
-        -webkit-overflow-scrolling: touch !important; /* 开启 iOS 丝滑滚动 */
+        flex: none !important; 
+        width: max-content !important; /* 关键：撑开总宽度，拒绝挤压 */
+        overflow: visible !important;
+        padding: 10px !important; 
     }
     
-    /* 4. 给源码和预览区赋予“绝对硬度”，死都不缩小，强行撑出外层滚动条 */
+    /* 4. 源码编辑区：修复高度溢出和滑条消失 */
     .editor-wrapper { 
-        height: 100% !important; 
-        min-width: 350px !important; 
+        height: calc(100vh - 20px) !important; /* 关键：100vh 减去上下 padding，防止滑条被挤出屏幕 */
+        width: 380px !important; 
+        min-width: 380px !important; 
         flex-shrink: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
+    .editor-wrapper textarea {
+        flex: 1 !important;
+        min-height: 0 !important; /* 极其重要：强制 flex 子项收缩，唤醒原本消失的滑条 */
+        overflow-y: auto !important; 
+    }
+    
+    /* 5. 纸张预览区：放开宽度，完整容纳 800px 纸张，杜绝右侧被切！ */
     .paper-preview-wrapper { 
-        height: 100% !important; 
-        min-width: 400px !important; 
+        height: calc(100vh - 20px) !important; /* 同样精准减去 padding */
+        width: 860px !important; /* 足够放下 800px 的纸张和边距 */
+        min-width: 860px !important; 
         flex-shrink: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
     }
     
-    /* 5. 没收纸张区的横向滑动权，防止它“吃掉”手指的滑动事件！ */
+    /* 6. 纸张滑动区：恢复独立的上下左右滑动 */
     .paper-scroll-area {
-        overflow-x: hidden !important; 
-        overflow-y: auto !important;
+        flex: 1 !important;
+        min-height: 0 !important; /* 唤醒滑条 */
+        overflow: auto !important; 
+        padding: 15px !important;
     }
     
-    /* 6. 消除 800px 造成的居中偏移，改为靠左上角对齐并智能缩放 */
+    /* 7. 纸张保持原尺寸，不强制缩放，保证最高清晰度 */
     .paper-page { 
-        transform-origin: top left !important; 
-        margin: 0 !important; /* 强行靠左，防止被左侧隐形裁切 */
-        transform: scale(min(1, calc((100vh - 100px) / 1131))) !important; 
-        margin-bottom: calc(-1131px * (1 - min(1, calc((100vh - 100px) / 1131))) + 15px) !important;
+        transform: none !important; 
+        margin: 0 auto 30px auto !important; 
     }
 }
