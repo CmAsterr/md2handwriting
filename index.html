@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全自动手写作业生成器 (终极 UI 净化版 v22.0)</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+    window.MathJax = {
+      tex: { 
+          inlineMath: [['$', '$'], ['\\(', '\\)']], 
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEnvironments: true 
+      },
+      chtml: { matchFontHeight: false }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div id="staging-area"></div>
+
+    <div class="control-panel">
+        <h2>排版参数控制台</h2>
+        
+        <div class="font-scanner-box">
+            <label class="text-blue">1️⃣ 正文字体</label>
+            <label for="textFontInput" class="btn-scan empty-state" id="textBtnLabel">📁 导入本地字体...</label>
+            <input type="file" id="textFontInput" multiple accept=".ttf,.otf,.woff,.woff2">
+            <div id="textFontList" class="font-list-container" style="display:none;"></div>
+        </div>
+
+        <div class="font-scanner-box">
+            <label class="text-green">2️⃣ 公式字体</label>
+            <label for="mathFontInput" class="btn-scan empty-state" id="mathBtnLabel">📁 导入本地字体...</label>
+            <input type="file" id="mathFontInput" multiple accept=".ttf,.otf,.woff,.woff2">
+            <div id="mathFontList" class="font-list-container" style="display:none;"></div>
+        </div>
+
+        <div class="font-scanner-box">
+            <label class="text-orange">3️⃣ 仿真纸张背景</label>
+            
+            <div style="display:flex; gap:5px; margin-bottom:8px;">
+                <button class="style-btn" onclick="setPresetBg('./仿真背景图/空白.jpg')">内置: 空白</button>
+                <button class="style-btn" onclick="setPresetBg('./仿真背景图/横线.jpg')">内置: 横线</button>
+            </div>
+            
+            <label for="bgImageInput" class="btn-scan btn-bg-gray" id="bgBtnLabel">上传背景图片</label>
+            <input type="file" id="bgImageInput" accept="image/jpeg, image/png">
+            <div id="bgPreview" class="bg-preview-box"></div>
+            <button class="btn-scan btn-bg-gray" id="resetBgBtn" style="margin-top:8px; display:none;" onclick="resetBg()">重置默认背景</button>
+        </div>
+
+        <div class="control-group" style="display: flex; gap: 10px; align-items: flex-start;">
+            <div style="flex: 1;">
+                <label>涂改样式 (支持公式)</label>
+                <div class="style-selector" id="scribbleSelector">
+                    <div class="style-btn active" data-val="1" onclick="setStyle('scribble', 1, this)">划线</div>
+                    <div class="style-btn" data-val="2" onclick="setStyle('scribble', 2, this)">乱线</div>
+                    <div class="style-btn" data-val="3" onclick="setStyle('scribble', 3, this)">波浪</div>
+                    <div class="style-btn" data-val="custom" onclick="setStyle('scribble', 'custom', this)">极客</div>
+                </div>
+                <textarea id="customScribbleCss" class="custom-css-input" placeholder="输入CSS 例如:&#10;background: rgba(255,0,0,0.5);" oninput="updateCustomCss()"></textarea>
+            </div>
+            <div style="flex: 1;">
+                <label>漏墨样式</label>
+                <div class="style-selector" id="inkSelector">
+                    <div class="style-btn active" data-val="1" onclick="setStyle('ink', 1, this)">墨滴</div>
+                    <div class="style-btn" data-val="2" onclick="setStyle('ink', 2, this)">飞溅</div>
+                    <div class="style-btn" data-val="3" onclick="setStyle('ink', 3, this)">拖抹</div>
+                    <div class="style-btn" data-val="custom" onclick="setStyle('ink', 'custom', this)">极客</div>
+                </div>
+                <textarea id="customInkCss" class="custom-css-input" placeholder="输入CSS 例如:&#10;width: 20px;" oninput="updateCustomCss()"></textarea>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>墨迹随机缩放: <span id="valInkSize" class="editable-val" contenteditable="true">1.0</span> 倍</label>
+            <input type="range" id="inkSize" min="0.5" max="5" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+            <label>涂改随机歪斜: <span id="valScribbleRand" class="editable-val" contenteditable="true">1.0</span> 倍</label>
+            <input type="range" id="scribbleRand" min="0" max="5" step="0.1" value="1.0">
+        </div>
+
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
+
+        <div style="display:flex; gap:10px;">
+            <div class="control-group" style="flex:1;"><label>上边距: <span id="valPadTop" class="editable-val" contenteditable="true">80</span></label><input type="range" id="padTop" min="0" max="300" step="1" value="80"></div>
+            <div class="control-group" style="flex:1;"><label>下边距: <span id="valPadBottom" class="editable-val" contenteditable="true">80</span></label><input type="range" id="padBottom" min="0" max="300" step="1" value="80"></div>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <div class="control-group" style="flex:1;"><label>左边距: <span id="valPadLeft" class="editable-val" contenteditable="true">60</span></label><input type="range" id="padLeft" min="0" max="300" step="1" value="60"></div>
+            <div class="control-group" style="flex:1;"><label>右边距: <span id="valPadRight" class="editable-val" contenteditable="true">60</span></label><input type="range" id="padRight" min="0" max="300" step="1" value="60"></div>
+        </div>
+
+        <div class="control-group">
+            <label>正文字号 (整体基准): <span id="valFontSize" class="editable-val" contenteditable="true">28</span>px</label>
+            <input type="range" id="fontSize" min="16" max="60" step="1" value="28">
+        </div>
+        <div class="control-group">
+            <label style="color:#10b981;">公式独立缩放率: <span id="valMathSize" class="editable-val" contenteditable="true">0.85</span></label>
+            <input type="range" id="mathSize" min="0.5" max="2.0" step="0.05" value="0.85">
+        </div>
+
+        <div class="control-group">
+            <label>整体行间距: <span id="valLineHeight" class="editable-val" contenteditable="true">1.50</span></label>
+            <input type="range" id="lineHeight" min="1.0" max="3.0" step="0.05" value="1.5">
+        </div>
+        <div class="control-group">
+            <label>全局字间距偏移: <span id="valLetterSpace" class="editable-val" contenteditable="true">0.0</span>px</label>
+            <input type="range" id="letterSpace" min="-10" max="20" step="0.5" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <label>边缘扭曲度 (水笔晕染): <span id="valWobble" class="editable-val" contenteditable="true">1.0</span></label>
+            <input type="range" id="wobble" min="0" max="10" step="0.1" value="1">
+        </div>
+
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
+
+        <div class="control-group">
+            <label>单字大小忽大忽小: <span id="valCharScale" class="editable-val" contenteditable="true">0.0</span> (0为不变)</label>
+            <input type="range" id="charScale" min="0" max="0.5" step="0.05" value="0.0">
+        </div>
+        <div class="control-group">
+            <label>单字左右游走 (忽远忽近): <span id="valCharX" class="editable-val" contenteditable="true">0.0</span>px</label>
+            <input type="range" id="charX" min="0" max="15" step="0.5" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <label>单字左右倾斜: <span id="valCharTilt" class="editable-val" contenteditable="true">1.5</span>°</label>
+            <div class="btn-group" id="tiltMode">
+                <button class="mode-btn" data-val="left" onclick="setMode('tilt', 'left', this)">全偏左</button>
+                <button class="mode-btn active" data-val="random" onclick="setMode('tilt', 'random', this)">随机连贯</button>
+                <button class="mode-btn" data-val="right" onclick="setMode('tilt', 'right', this)">全偏右</button>
+            </div>
+            <input type="range" id="charTilt" min="0" max="30" step="0.5" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <label>单字上下起伏: <span id="valCharY" class="editable-val" contenteditable="true">1.0</span>px</label>
+            <div class="btn-group" id="yMode">
+                <button class="mode-btn" data-val="up" onclick="setMode('y', 'up', this)">全偏上</button>
+                <button class="mode-btn active" data-val="random" onclick="setMode('y', 'random', this)">随机起伏</button>
+                <button class="mode-btn" data-val="down" onclick="setMode('y', 'down', this)">全偏下</button>
+            </div>
+            <input type="range" id="charY" min="0" max="20" step="0.5" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>整行倾斜: <span id="valLineSlant" class="editable-val" contenteditable="true">1.0</span>°</label>
+            <div class="btn-group" id="slantMode">
+                <button class="mode-btn" data-val="up" onclick="setMode('slant', 'up', this)">朝右上</button>
+                <button class="mode-btn active" data-val="random" onclick="setMode('slant', 'random', this)">随机歪斜</button>
+                <button class="mode-btn" data-val="down" onclick="setMode('slant', 'down', this)">朝右下</button>
+            </div>
+            <input type="range" id="lineSlant" min="0" max="15" step="0.5" value="1.0">
+        </div>
+    </div>
+
+    <div class="workspace">
+        <div class="editor-wrapper">
+            <div class="pane-title">
+                <span>📝 Markdown & LaTeX 源码编辑区</span>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <label class="checkbox-wrapper" style="margin:0; color:white;"><input type="checkbox" id="autoMath" onchange="debounceRender()"> 字母/数字转公式</label>
+                    <label class="checkbox-wrapper" style="margin:0; color:white;"><input type="checkbox" id="removeEmptyLines" checked onchange="debounceRender()"> 去除多余空行</label>
+                </div>
+            </div>
+            <textarea id="textInput" spellcheck="false" placeholder="在此输入你的作业内容..." oninput="debounceRender()"></textarea>
+        </div>
+
+        <div class="paper-preview-wrapper">
+            <div class="pane-title">
+                <span>✍️ 仿真手写渲染结果 (真实排版)</span>
+                <div class="header-actions">
+                    <button class="header-btn btn-primary" onclick="forceRender()">🔄 重新排版</button>
+                    <button class="header-btn btn-success" onclick="openExportModal()">🚀 导出作业</button>
+                </div>
+            </div>
+            <div class="paper-scroll-area" id="paper-container"></div>
+        </div>
+    </div>
+
+    <div id="cropModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">裁剪为 A4 纸比例</div>
+            <div class="img-container"><img id="cropImage" src=""></div>
+            <div class="modal-footer">
+                <div class="crop-controls">
+                    <span>缩放背景:</span>
+                    <input type="range" id="cropZoomSlider" min="0.05" max="3" step="0.01" value="1">
+                    <input type="number" id="cropZoomInput" value="1.00" step="0.01">
+                </div>
+                <div class="modal-footer-btns">
+                    <button class="btn-cancel" onclick="closeCropModal()">取消</button>
+                    <button class="btn-confirm" onclick="applyCrop()">确认裁剪</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="width: 350px;">
+            <div class="modal-header">导出设置</div>
+            <div style="padding: 20px;">
+                <div class="export-group">
+                    <label>导出文件名</label>
+                    <input type="text" id="exportFilename" value="手写作业">
+                </div>
+                <div class="export-group">
+                    <label>导出格式</label>
+                    <div class="radio-group">
+                        <label class="radio-label"><input type="radio" name="exportFormat" value="pdf" checked> 📄 PDF 文档</label>
+                        <label class="radio-label"><input type="radio" name="exportFormat" value="zip"> 📦 ZIP 图片压缩包</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeExportModal()">取消</button>
+                <button class="btn-confirm" onclick="confirmExport()">开始导出</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="progress-modal" class="modal-overlay" style="display:none; z-index: 10000;">
+        <div class="modal-content" style="width: 350px; text-align: center; padding: 25px;">
+            <h3 id="progress-text" style="margin-top:0; color: #1e293b;">⚙️ 正在准备导出...</h3>
+            <div class="progress-bar-bg" style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin: 15px 0;">
+                <div id="progress-bar" class="progress-bar-fill" style="width: 0%; height: 100%; background: #10b981; transition: width 0.2s;"></div>
+            </div>
+            <button class="action-btn btn-danger" style="margin-top: 0;" onclick="cancelExport()">🚨 中止</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
