@@ -25,29 +25,29 @@ const CDN_PREFIX = "./";
 
 const BUILTIN_FONTS = {
     text: [
-        { id: "bt_chen", name: "辰宇落雁体", url: CDN_PREFIX + "正文字体/ChenYuluoyan-2.0-Thin.ttf" },
-        { id: "bt_honglei", name: "洪雷拙书", url: CDN_PREFIX + "正文字体/HongLeiZhuoShuJianTi-2.ttf" },
-        { id: "bt_lixu", name: "李旭科行书", url: CDN_PREFIX + "正文字体/LiXuKeJingDianXingShu-2.ttf" },
-        { id: "bt_yozai", name: "悠哉字体", url: CDN_PREFIX + "正文字体/Yozai-Medium.ttf" },
-        { id: "bt_yiqi", name: "义启手写体", url: CDN_PREFIX + "正文字体/义启手写体.ttf" },
-        { id: "bt_yunyan", name: "云烟体", url: CDN_PREFIX + "正文字体/云烟体.ttf" },
-        { id: "bt_ximai", name: "喜脉喜欢体", url: CDN_PREFIX + "正文字体/字制区喜脉喜欢体.ttf" },
-        { id: "bt_liguofu", name: "李国夫手写体", url: CDN_PREFIX + "正文字体/李国夫手写体.ttf" },
-        { id: "bt_qingye", name: "青叶手写体", url: CDN_PREFIX + "正文字体/青叶手写体.ttf" },
-        { id: "bt_hw_text", name: "Handwritten (参考)", url: CDN_PREFIX + "正文字体/handwritten.ttf" }
+        { id: "bt_chen", name: "辰宇落雁体", url: CDN_PREFIX + "fonts/正文字体/ChenYuluoyan-2.0-Thin.ttf" },
+        { id: "bt_honglei", name: "洪雷拙书", url: CDN_PREFIX + "fonts/正文字体/HongLeiZhuoShuJianTi-2.ttf" },
+        { id: "bt_lixu", name: "李旭科行书", url: CDN_PREFIX + "fonts/正文字体/LiXuKeJingDianXingShu-2.ttf" },
+        { id: "bt_yozai", name: "悠哉字体", url: CDN_PREFIX + "fonts/正文字体/Yozai-Medium.ttf" },
+        { id: "bt_yiqi", name: "义启手写体", url: CDN_PREFIX + "fonts/正文字体/义启手写体.ttf" },
+        { id: "bt_yunyan", name: "云烟体", url: CDN_PREFIX + "fonts/正文字体/云烟体.ttf" },
+        { id: "bt_ximai", name: "喜脉喜欢体", url: CDN_PREFIX + "fonts/正文字体/字制区喜脉喜欢体.ttf" },
+        { id: "bt_liguofu", name: "李国夫手写体", url: CDN_PREFIX + "fonts/正文字体/李国夫手写体.ttf" },
+        { id: "bt_qingye", name: "青叶手写体", url: CDN_PREFIX + "fonts/正文字体/青叶手写体.ttf" },
+        { id: "bt_hw_text", name: "Handwritten (参考)", url: CDN_PREFIX + "fonts/正文字体/handwritten.ttf" }
     ],
     math: [
-        { id: "bm_arch", name: "Architects Daughter", url: CDN_PREFIX + "公式字体/ArchitectsDaughter-Regular.ttf" },
-        { id: "bm_caveat", name: "Caveat", url: CDN_PREFIX + "公式字体/Caveat-Regular.ttf" },
-        { id: "bm_comic", name: "Comic Shanns", url: CDN_PREFIX + "公式字体/comic shanns 2.ttf" },
-        { id: "bm_gochi", name: "Gochi Hand", url: CDN_PREFIX + "公式字体/GochiHand-Regular.ttf" },
-        { id: "bm_kalam_b", name: "Kalam Bold", url: CDN_PREFIX + "公式字体/Kalam-Bold.ttf" },
-        { id: "bm_kalam_l", name: "Kalam Light", url: CDN_PREFIX + "公式字体/Kalam-Light.ttf" },
-        { id: "bm_kalam_r", name: "Kalam Regular", url: CDN_PREFIX + "公式字体/Kalam-Regular.ttf" },
-        { id: "bm_neucha", name: "Neucha", url: CDN_PREFIX + "公式字体/Neucha.ttf" },
-        { id: "bm_shadows", name: "Shadows Into Light", url: CDN_PREFIX + "公式字体/ShadowsIntoLight-Regular.ttf" },
-        { id: "bm_virgil", name: "Virgil", url: CDN_PREFIX + "公式字体/Virgil.woff2" },
-        { id: "bm_hw_math", name: "Handwritten (公式)", url: CDN_PREFIX + "公式字体/handwritten.ttf" }
+        { id: "bm_arch", name: "Architects Daughter", url: CDN_PREFIX + "fonts/公式字体/ArchitectsDaughter-Regular.ttf" },
+        { id: "bm_caveat", name: "Caveat", url: CDN_PREFIX + "fonts/公式字体/Caveat-Regular.ttf" },
+        { id: "bm_comic", name: "Comic Shanns", url: CDN_PREFIX + "fonts/公式字体/comic shanns 2.ttf" },
+        { id: "bm_gochi", name: "Gochi Hand", url: CDN_PREFIX + "fonts/公式字体/GochiHand-Regular.ttf" },
+        { id: "bm_kalam_b", name: "Kalam Bold", url: CDN_PREFIX + "fonts/公式字体/Kalam-Bold.ttf" },
+        { id: "bm_kalam_l", name: "Kalam Light", url: CDN_PREFIX + "fonts/公式字体/Kalam-Light.ttf" },
+        { id: "bm_kalam_r", name: "Kalam Regular", url: CDN_PREFIX + "fonts/公式字体/Kalam-Regular.ttf" },
+        { id: "bm_neucha", name: "Neucha", url: CDN_PREFIX + "fonts/公式字体/Neucha.ttf" },
+        { id: "bm_shadows", name: "Shadows Into Light", url: CDN_PREFIX + "fonts/公式字体/ShadowsIntoLight-Regular.ttf" },
+        { id: "bm_virgil", name: "Virgil", url: CDN_PREFIX + "fonts/公式字体/Virgil.woff2" },
+        { id: "bm_hw_math", name: "Handwritten (公式)", url: CDN_PREFIX + "fonts/公式字体/handwritten.ttf" }
     ]
 };
 
