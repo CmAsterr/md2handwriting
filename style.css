@@ -276,3 +276,42 @@ mjx-stretchy-v { display: none !important; }
     transform: none !important; /* 彻底删除任何变形 */
     scale: 1 !important;      /* 强制缩放比例为 1 (不放大) */
 }
+
+/* ==============================================================
+   手机横屏专属补丁：强制恢复左右排布，并增加底部横向拉条
+   ============================================================== */
+@media (max-width: 950px) and (orientation: landscape) {
+    /* 1. 强制恢复左右全屏布局 */
+    body { 
+        flex-direction: row !important; 
+        height: 100vh !important; 
+        overflow: hidden !important; 
+    }
+    /* 2. 控制台回到左边 */
+    .control-panel { 
+        width: 300px !important; 
+        height: 100vh !important; 
+        border-right: 2px solid #cbd5e1 !important;
+        border-bottom: none !important;
+    }
+    /* 3. 工作区回到左右分栏 */
+    .workspace { 
+        flex-direction: row !important; 
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    .editor-wrapper { 
+        height: 100% !important; 
+        min-width: 250px !important;
+    }
+    .paper-preview-wrapper { 
+        height: 100% !important; 
+        min-width: 300px !important;
+    }
+    /* 4. 横屏高度极小，必须按高度(vh)而不是宽度(vw)缩放，否则看不见纸张全貌 */
+    .paper-page { 
+        transform-origin: top center !important; 
+        transform: scale(min(1, calc((100vh - 100px) / 1131))) !important; 
+        margin-bottom: calc(-1131px * (1 - min(1, calc((100vh - 100px) / 1131))) + 15px) !important;
+    }
+}
