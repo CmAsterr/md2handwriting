@@ -15,87 +15,69 @@ window.isRenderingCanceled = false;
 // ==========================================
 // 🚀 Github Pages 部署专属：内置预设字体配置
 // ==========================================
-// ==========================================
-// 🚀 Github Pages 部署专属：内置预设字体配置
-// ==========================================
-// 【终极加速】：国内访问 GitHub 极慢，强烈建议使用 jsDelivr CDN。
-// 请将下面链接中的 '你的仓库名' 替换为你真实的仓库名 (比如 markdown-to-handwriting)
-// 如果你还在本地测试，先把这行改成 const CDN_PREFIX = "./"; 即可。
-const CDN_PREFIX = "./";
-
 const BUILTIN_FONTS = {
     text: [
-        { id: "bt_chen", name: "辰宇落雁体", url: CDN_PREFIX + "fonts/正文字体/ChenYuluoyan-2.0-Thin.ttf" },
-        { id: "bt_honglei", name: "洪雷拙书", url: CDN_PREFIX + "fonts/正文字体/HongLeiZhuoShuJianTi-2.ttf" },
-        { id: "bt_lixu", name: "李旭科行书", url: CDN_PREFIX + "fonts/正文字体/LiXuKeJingDianXingShu-2.ttf" },
-        { id: "bt_yozai", name: "悠哉字体", url: CDN_PREFIX + "fonts/正文字体/Yozai-Medium.ttf" },
-        { id: "bt_yiqi", name: "义启手写体", url: CDN_PREFIX + "fonts/正文字体/义启手写体.ttf" },
-        { id: "bt_yunyan", name: "云烟体", url: CDN_PREFIX + "fonts/正文字体/云烟体.ttf" },
-        { id: "bt_ximai", name: "喜脉喜欢体", url: CDN_PREFIX + "fonts/正文字体/字制区喜脉喜欢体.ttf" },
-        { id: "bt_liguofu", name: "李国夫手写体", url: CDN_PREFIX + "fonts/正文字体/李国夫手写体.ttf" },
-        { id: "bt_qingye", name: "青叶手写体", url: CDN_PREFIX + "fonts/正文字体/青叶手写体.ttf" },
-        { id: "bt_hw_text", name: "Handwritten (参考)", url: CDN_PREFIX + "fonts/正文字体/handwritten.ttf" }
+        { id: "bt_chen", name: "辰宇落雁体", url: "./fonts/正文字体/ChenYuluoyan-2.0-Thin.ttf" },
+        { id: "bt_honglei", name: "洪雷拙书", url: "./fonts/正文字体/HongLeiZhuoShuJianTi-2.ttf" },
+        { id: "bt_lixu", name: "李旭科行书", url: "./fonts/正文字体/LiXuKeJingDianXingShu-2.ttf" },
+        { id: "bt_yozai", name: "悠哉字体", url: "./fonts/正文字体/Yozai-Medium.ttf" },
+        { id: "bt_yiqi", name: "义启手写体", url: "./fonts/正文字体/义启手写体.ttf" },
+        { id: "bt_yunyan", name: "云烟体", url: "./fonts/正文字体/云烟体.ttf" },
+        { id: "bt_ximai", name: "喜脉喜欢体", url: "./fonts/正文字体/字制区喜脉喜欢体.ttf" },
+        { id: "bt_liguofu", name: "李国夫手写体", url: "./fonts/正文字体/李国夫手写体.ttf" },
+        { id: "bt_qingye", name: "青叶手写体", url: "./fonts/正文字体/青叶手写体.ttf" },
+        { id: "bt_hw_text", name: "Handwritten (参考)", url: "./fonts/正文字体/handwritten.ttf" }
     ],
     math: [
-        { id: "bm_arch", name: "Architects Daughter", url: CDN_PREFIX + "fonts/公式字体/ArchitectsDaughter-Regular.ttf" },
-        { id: "bm_caveat", name: "Caveat", url: CDN_PREFIX + "fonts/公式字体/Caveat-Regular.ttf" },
-        { id: "bm_comic", name: "Comic Shanns", url: CDN_PREFIX + "fonts/公式字体/comic shanns 2.ttf" },
-        { id: "bm_gochi", name: "Gochi Hand", url: CDN_PREFIX + "fonts/公式字体/GochiHand-Regular.ttf" },
-        { id: "bm_kalam_b", name: "Kalam Bold", url: CDN_PREFIX + "fonts/公式字体/Kalam-Bold.ttf" },
-        { id: "bm_kalam_l", name: "Kalam Light", url: CDN_PREFIX + "fonts/公式字体/Kalam-Light.ttf" },
-        { id: "bm_kalam_r", name: "Kalam Regular", url: CDN_PREFIX + "fonts/公式字体/Kalam-Regular.ttf" },
-        { id: "bm_neucha", name: "Neucha", url: CDN_PREFIX + "fonts/公式字体/Neucha.ttf" },
-        { id: "bm_shadows", name: "Shadows Into Light", url: CDN_PREFIX + "fonts/公式字体/ShadowsIntoLight-Regular.ttf" },
-        { id: "bm_virgil", name: "Virgil", url: CDN_PREFIX + "fonts/公式字体/Virgil.woff2" },
-        { id: "bm_hw_math", name: "Handwritten (公式)", url: CDN_PREFIX + "fonts/公式字体/handwritten.ttf" }
+        { id: "bm_arch", name: "Architects Daughter", url: "./fonts/公式字体/ArchitectsDaughter-Regular.ttf" },
+        { id: "bm_caveat", name: "Caveat", url: "./fonts/公式字体/Caveat-Regular.ttf" },
+        { id: "bm_comic", name: "Comic Shanns", url: "./fonts/公式字体/comic shanns 2.ttf" },
+        { id: "bm_gochi", name: "Gochi Hand", url: "./fonts/公式字体/GochiHand-Regular.ttf" },
+        { id: "bm_kalam_b", name: "Kalam Bold", url: "./fonts/公式字体/Kalam-Bold.ttf" },
+        { id: "bm_kalam_l", name: "Kalam Light", url: "./fonts/公式字体/Kalam-Light.ttf" },
+        { id: "bm_kalam_r", name: "Kalam Regular", url: "./fonts/公式字体/Kalam-Regular.ttf" },
+        { id: "bm_neucha", name: "Neucha", url: "./fonts/公式字体/Neucha.ttf" },
+        { id: "bm_shadows", name: "Shadows Into Light", url: "./fonts/公式字体/ShadowsIntoLight-Regular.ttf" },
+        { id: "bm_virgil", name: "Virgil", url: "./fonts/公式字体/Virgil.woff2" },
+        { id: "bm_hw_math", name: "Handwritten (公式)", url: "./fonts/公式字体/handwritten.ttf" }
     ]
 };
 
-// 动态注入内置字体引擎 (极速版：瞬间渲染列表，按需加载字体)
+// 动态注入内置字体引擎
+// 动态注入内置字体引擎 (追加彩色内置 Tag)
 async function initBuiltinFonts() {
     for (let type in BUILTIN_FONTS) {
         const listEl = document.getElementById(type + 'FontList');
         if(!listEl) continue;
 
-        if (BUILTIN_FONTS[type].length > 0) { listEl.style.display = 'block'; }
+        if (BUILTIN_FONTS[type].length > 0) {
+            listEl.style.display = 'block';
+            // ⚠️ 删除了这里原本移除 empty-state 样式的代码，让按钮永远保持灰色倾斜！
+        }
 
         const defaultText = type === 'math' ? '系统默认 (Cambria)' : '系统默认 (楷体)';
         listEl.innerHTML = `<div class="font-item active" data-val="default" onclick="selectFont('${type}', 'default', this)"><span class="font-item-text">${defaultText}</span></div>`;
 
-        BUILTIN_FONTS[type].forEach(font => {
-            // 1. 注入 CSS，使用 font-display: swap 保证不阻塞页面渲染
+        BUILTIN_FONTS[type].forEach(async font => {
             const style = document.createElement('style');
-            style.textContent = `@font-face { font-family: '${font.id}'; src: url('${font.url}'); font-display: swap; }`;
+            style.textContent = `@font-face { font-family: '${font.id}'; src: url('${font.url}'); }`;
             document.head.appendChild(style);
 
-            // 2. 瞬间生成 DOM 节点（不要再用 await 死等下载了！）
-            const item = document.createElement('div');
-            item.className = 'font-item';
-            item.setAttribute('data-val', font.id);
-            item.innerHTML = `<span class="font-item-text" style="font-family: '${font.id}', 'Kaiti', serif;"><span class="tag-builtin">内置</span>${font.name}</span>`;
-            
-            // 3. 点击时的优雅加载交互
-            item.onclick = function() { 
-                const textSpan = this.querySelector('.font-item-text');
-                const originalHtml = textSpan.innerHTML;
-                // 变身橙色加载提示
-                textSpan.innerHTML = `<span class="tag-builtin" style="background:#f59e0b; color:white;">下载中</span>${font.name}`;
-                
-                // 强行要求浏览器优先下载该字体，下好了再排版
-                document.fonts.load(`16px "${font.id}"`).then(() => {
-                    textSpan.innerHTML = originalHtml;
-                    selectFont(type, font.id, this);
-                }).catch(() => {
-                    textSpan.innerHTML = `<span class="tag-builtin" style="background:#ef4444; color:white;">失败</span>请检查网络`;
-                    setTimeout(() => { textSpan.innerHTML = originalHtml; }, 2000);
-                });
-            };
-            
-            listEl.appendChild(item);
+            try {
+                await document.fonts.load(`16px "${font.id}"`);
+                const item = document.createElement('div');
+                item.className = 'font-item';
+                item.setAttribute('data-val', font.id);
+                // 👇 加入优雅的“内置”标签
+                item.innerHTML = `<span class="font-item-text" style="font-family: '${font.id}', 'Kaiti', serif;"><span class="tag-builtin">内置</span>${font.name}</span>`;
+                item.onclick = function() { selectFont(type, font.id, this); };
+                listEl.appendChild(item);
+            } catch(err) {
+                console.warn(`内置字体加载失败: ${font.name}`, err);
+            }
         });
     }
 }
-// ==========================================
 // ==========================================
 
 function setMode(type, val, el) {
