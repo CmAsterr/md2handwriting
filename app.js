@@ -328,6 +328,11 @@ inputs.forEach(id => {
 });
 
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 const protectMathGlobally = (text) => {
     let blocks = [];
     const inkBase = parseFloat(document.getElementById('inkSize').value) || 1.0;
@@ -344,18 +349,75 @@ const protectMathGlobally = (text) => {
         blocks.push(html); return `@@MATH_EF_${blocks.length - 1}@@`; 
     });
 
-    // 2. 提取保护原生公式
+    // 2. 提取保护块级原生公式 (环境与双美元符号)
     temp = temp.replace(/\\begin\{([a-zA-Z0-9*]+)\}[\s\S]*?\\end\{\1\}/g, m => {
         blocks.push(m); return `@@MATH_ENV_${blocks.length - 1}@@`;
     });
     temp = temp.replace(/\$\$([\s\S]*?)\$\$/g, m => {
         blocks.push(m); return `@@MATH_BLOCK_${blocks.length - 1}@@`;
     });
-    temp = temp.replace(/\$(.*?)\$/g, m => {
+
+    // =========================================================================
+    // 3. 终极重构：字符级 AST 深度解析引擎，精准切割等号，100% 拒绝正则漏网！
+    // =========================================================================
+    const isSplitEq = document.getElementById('splitMathEq') && document.getElementById('splitMathEq').checked;
+    if (isSplitEq) {
+        temp = temp.replace(/\$([\s\S]+?)\$/g, (match, inner) => {
+            if (!inner.includes('=')) return match; 
+            
+            let depth = 0;
+            let parts = [];
+            let currentPart = '';
+            
+            // 逐字扫描，彻底杜绝正则的嵌套匹配盲区
+            for (let i = 0; i < inner.length; i++) {
+                let char = inner[i];
+                
+                // 忽略转义字符 (例如 \{, \[, \( 甚至 \\)，防止它们干扰层级判定
+                if (char === '\\' && i + 1 < inner.length) {
+                    currentPart += char + inner[i+1];
+                    i++; continue;
+                }
+                
+                // 遇到左括号，进入深层；遇到右括号，返回浅层
+                if (char === '{' || char === '(' || char === '[') depth++;
+                else if (char === '}' || char === ')' || char === ']') depth--;
+                
+                // 绝杀判定：只有在最外层（depth <= 0）遇到等号，才安全切分！
+                if (char === '=' && depth <= 0) {
+                    parts.push(currentPart);
+                    currentPart = '';
+                } else {
+                    currentPart += char;
+                }
+            }
+            parts.push(currentPart);
+            
+            if (parts.length === 1) return match; 
+            
+            let result = '';
+            for (let j = 0; j < parts.length; j++) {
+                blocks.push(`$${parts[j]}$`);
+                result += `@@MATH_INLINE_${blocks.length - 1}@@`;
+                
+                if (j < parts.length - 1) {
+                    // 塞入独立的等号占位符，保证完美的公式间距
+                    blocks.push('${}={}$'); 
+                    // 【物理换行点】：强行注入真实的空格，迫使浏览器在此处允许换行！
+                    result += ` @@MATH_INLINE_${blocks.length - 1}@@ `;
+                }
+            }
+            return result; 
+        });
+    }
+    // =========================================================================
+
+    // 4. 提取保护剩下的普通行内公式
+    temp = temp.replace(/\$([\s\S]+?)\$/g, m => {
         blocks.push(m); return `@@MATH_INLINE_${blocks.length - 1}@@`;
     });
     
-    // 3. 自动字母/数字转公式
+    // 5. 自动字母/数字转公式
     const isAutoMath = document.getElementById('autoMath') && document.getElementById('autoMath').checked;
     if (isAutoMath) {
         let parts = temp.split(/(@@.*?@@)/);
@@ -370,7 +432,7 @@ const protectMathGlobally = (text) => {
         temp = parts.join('');
     }
     
-    // 4. 将涂改符号拆解为首尾标志，方便底层逐字注入真实标签
+    // 6. 将涂改符号拆解为首尾标志
     temp = temp.replace(/~~([\s\S]*?)~~/g, '@@S_START@@$1@@S_END@@');
     
     return { temp, blocks };
@@ -605,10 +667,14 @@ function saveState() {
         text: textInput.value, 
         removeEmptyLines: document.getElementById('removeEmptyLines') ? document.getElementById('removeEmptyLines').checked : false,
         autoMath: document.getElementById('autoMath') ? document.getElementById('autoMath').checked : false,
-        scribble: currentScribbleStyle, ink: currentInkStyle,
+        // 新增：保存等号折行开关的状态
+        splitMathEq: document.getElementById('splitMathEq') ? document.getElementById('splitMathEq').checked : true,
+        scribble: currentScribbleStyle, 
+        ink: currentInkStyle,
         scribbleCss: document.getElementById('customScribbleCss') ? document.getElementById('customScribbleCss').value : '',
         inkCss: document.getElementById('customInkCss') ? document.getElementById('customInkCss').value : '',
-        customBg: bgBase64, config: config
+        customBg: bgBase64, 
+        config: config
     };
     
     inputs.forEach(id => {
@@ -796,7 +862,10 @@ window.onload = async () => {
                 const cb = document.getElementById('autoMath');
                 if(cb) cb.checked = state.autoMath;
             }
-            
+            if(state.splitMathEq !== undefined) {
+                const cb = document.getElementById('splitMathEq');
+                if(cb) cb.checked = state.splitMathEq;
+            }
             if(state.scribbleCss) {
                 const sCss = document.getElementById('customScribbleCss');
                 if(sCss) sCss.value = state.scribbleCss;

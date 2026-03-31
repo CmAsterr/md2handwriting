@@ -170,11 +170,18 @@
 
     <div class="workspace">
         <div class="editor-wrapper">
-            <div class="pane-title">
+            <div class="pane-title" style="flex-wrap: wrap; gap: 10px;">
                 <span>📝 Markdown & LaTeX 源码编辑区</span>
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <label class="checkbox-wrapper" style="margin:0; color:white;"><input type="checkbox" id="autoMath" onchange="debounceRender()"> 字母/数字转公式</label>
-                    <label class="checkbox-wrapper" style="margin:0; color:white;"><input type="checkbox" id="removeEmptyLines" checked onchange="debounceRender()"> 去除多余空行</label>
+                <div style="display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
+                    <label class="checkbox-wrapper" style="margin:0; color:white;" title="在行内公式的等号处自动断开，实现长公式自然换行">
+                        <input type="checkbox" id="splitMathEq" onchange="debounceRender()" checked> 等号自动折行
+                    </label>
+                    <label class="checkbox-wrapper" style="margin:0; color:white;">
+                        <input type="checkbox" id="autoMath" onchange="debounceRender()"> 字母/数字转公式
+                    </label>
+                    <label class="checkbox-wrapper" style="margin:0; color:white;">
+                        <input type="checkbox" id="removeEmptyLines" checked onchange="debounceRender()"> 去除空行
+                    </label>
                 </div>
             </div>
             <textarea id="textInput" spellcheck="false" placeholder="在此输入你的作业内容..." oninput="debounceRender()"></textarea>

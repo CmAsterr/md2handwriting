@@ -108,10 +108,25 @@ textarea:focus { outline: none; }
 .ink-type-2 { width: 26px; height: 16px; border-radius: 20% 80% 30% 70% / 60% 30% 70% 40%; filter: blur(0.6px); box-shadow: 5px 3px 1px -1px rgba(28,28,36,0.8), -3px -2px 1px -1px rgba(28,28,36,0.6); }
 .ink-type-3 { width: 38px; height: 10px; border-radius: 50% 20% / 50% 80%; filter: blur(1.2px); opacity: 0.9; }
 
-mjx-container, mjx-container *, mjx-math, mjx-math * { overflow: visible !important; }
-mjx-stretchy-v { display: none !important; }
+/* ==============================================================
+   MathJax 公式引擎终极修复：完美融合手写字体与原生线条结构
+   ============================================================== */
 
-#staging-area mjx-container, #staging-area mjx-container *, .paper-page mjx-container, .paper-page mjx-container * { font-family: var(--math-font) !important; }
+/* 1. 核心修复：坚决保护内部用于裁剪线条的 overflow: hidden，只允许最外层防抖动溢出 */
+mjx-container, mjx-math { overflow: visible !important; }
+
+/* 2. 强制穿透：必须带有 * 号！强制打穿 MathJax 深层的 <mjx-c> 标签，让 g, h, D 恢复手写体 */
+#staging-area mjx-container *, .paper-page mjx-container * { 
+    font-family: var(--math-font) !important; 
+}
+
+/* 3. 护航拉伸组件：利用更高的 CSS 权重 (3个层级 > 2个层级)，强行把上划线、绝对值的字体控制权抢回给原生字体，防止黑块！ */
+#staging-area mjx-container mjx-stretchy-v *, #staging-area mjx-container mjx-stretchy-h *,
+.paper-page mjx-container mjx-stretchy-v *, .paper-page mjx-container mjx-stretchy-h * {
+    font-family: 'MathJax_Main', 'Cambria Math', 'Times New Roman', serif !important;
+}
+
+/* 4. 基础布局保持原版不变 */
 #staging-area mjx-container.MathJax, .paper-page mjx-container.MathJax { font-size: calc(1em * var(--math-scale)) !important; display: inline-block; margin: 0 2px; padding-bottom: 2px; }
 #staging-area mjx-container.MathJax[display="true"], .paper-page mjx-container.MathJax[display="true"] { max-width: 100%; overflow-x: hidden; overflow-y: visible !important; margin: 10px 0 !important; }
 #staging-area { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
