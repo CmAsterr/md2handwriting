@@ -334,6 +334,7 @@ inputs.forEach(id => {
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 const protectMathGlobally = (text) => {
     let blocks = [];
     const inkBase = parseFloat(document.getElementById('inkSize').value) || 1.0;
@@ -358,9 +359,7 @@ const protectMathGlobally = (text) => {
         blocks.push(m); return `@@MATH_BLOCK_${blocks.length - 1}@@`;
     });
 
-    // =========================================================================
-    // 3. 终极重构：字符级 AST 深度解析引擎，精准切割等号，100% 拒绝正则漏网！
-    // =========================================================================
+    // 3. 安全切割行内公式等号
     const isSplitEq = document.getElementById('splitMathEq') && document.getElementById('splitMathEq').checked;
     if (isSplitEq) {
         temp = temp.replace(/\$([\s\S]+?)\$/g, (match, inner) => {
@@ -370,21 +369,16 @@ const protectMathGlobally = (text) => {
             let parts = [];
             let currentPart = '';
             
-            // 逐字扫描，彻底杜绝正则的嵌套匹配盲区
             for (let i = 0; i < inner.length; i++) {
                 let char = inner[i];
-                
-                // 忽略转义字符 (例如 \{, \[, \( 甚至 \\)，防止它们干扰层级判定
                 if (char === '\\' && i + 1 < inner.length) {
                     currentPart += char + inner[i+1];
                     i++; continue;
                 }
                 
-                // 遇到左括号，进入深层；遇到右括号，返回浅层
                 if (char === '{' || char === '(' || char === '[') depth++;
                 else if (char === '}' || char === ')' || char === ']') depth--;
                 
-                // 绝杀判定：只有在最外层（depth <= 0）遇到等号，才安全切分！
                 if (char === '=' && depth <= 0) {
                     parts.push(currentPart);
                     currentPart = '';
@@ -402,39 +396,21 @@ const protectMathGlobally = (text) => {
                 result += `@@MATH_INLINE_${blocks.length - 1}@@`;
                 
                 if (j < parts.length - 1) {
-                    // 塞入独立的等号占位符，保证完美的公式间距
                     blocks.push('${}={}$'); 
-                    // 【物理换行点】：强行注入真实的空格，迫使浏览器在此处允许换行！
                     result += ` @@MATH_INLINE_${blocks.length - 1}@@ `;
                 }
             }
             return result; 
         });
     }
-    // =========================================================================
 
     // 4. 提取保护剩下的普通行内公式
     temp = temp.replace(/\$([\s\S]+?)\$/g, m => {
         blocks.push(m); return `@@MATH_INLINE_${blocks.length - 1}@@`;
     });
     
-    // 5. 自动字母/数字转公式
-    const isAutoMath = document.getElementById('autoMath') && document.getElementById('autoMath').checked;
-    if (isAutoMath) {
-        let parts = temp.split(/(@@.*?@@)/);
-        for (let i = 0; i < parts.length; i++) {
-            if (i % 2 === 0) { 
-                parts[i] = parts[i].replace(/[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*/g, m => {
-                    blocks.push(`$${m}$`);
-                    return `@@MATH_INLINE_${blocks.length - 1}@@`;
-                });
-            }
-        }
-        temp = parts.join('');
-    }
-    
     // =========================================================================
-    // 新增：安全解析并提取 \textcolor{color}{content} 颜色块 (完美支持嵌套公式与多行)
+    // 5. 关键修复：安全解析并提取 \textcolor 颜色块 (必须在 AutoMath 之前执行！)
     // =========================================================================
     let tempArr = [];
     let i = 0;
@@ -446,7 +422,6 @@ const protectMathGlobally = (text) => {
                 let color = temp.substring(cStart, cEnd);
                 let depth = 1;
                 let j = cEnd + 2;
-                // 严谨计算花括号深度，防止内部公式被拦腰斩断
                 while (j < temp.length && depth > 0) {
                     if (temp[j] === '\\' && (temp[j+1] === '{' || temp[j+1] === '}')) { j += 2; continue; }
                     if (temp[j] === '{') depth++;
@@ -467,7 +442,23 @@ const protectMathGlobally = (text) => {
     temp = tempArr.join('');
     // =========================================================================
 
-    // 6. 将涂改符号拆解为首尾标志
+    // 6. 自动字母/数字转公式 (现在它只会转换文本内容，绝对碰不到颜色标签了)
+    const isAutoMath = document.getElementById('autoMath') && document.getElementById('autoMath').checked;
+    if (isAutoMath) {
+        let parts = temp.split(/(@@.*?@@)/);
+        for (let k = 0; k < parts.length; k++) {
+            // 只有偶数索引是纯文本内容，带 @@ 的保护标签会被跳过
+            if (k % 2 === 0) { 
+                parts[k] = parts[k].replace(/[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*/g, m => {
+                    blocks.push(`$${m}$`);
+                    return `@@MATH_INLINE_${blocks.length - 1}@@`;
+                });
+            }
+        }
+        temp = parts.join('');
+    }
+
+    // 7. 将涂改符号拆解为首尾标志
     temp = temp.replace(/~~([\s\S]*?)~~/g, '@@S_START@@$1@@S_END@@');
     
     return { temp, blocks };
