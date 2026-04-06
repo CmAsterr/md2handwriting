@@ -333,6 +333,7 @@ inputs.forEach(id => {
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 // 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
+// 【核心逻辑】：解析公式、处理漏墨、处理涂改标记、自动转公式、以及等号智能切分
 const protectMathGlobally = (text) => {
     let blocks = [];
     const inkBase = parseFloat(document.getElementById('inkSize').value) || 1.0;
@@ -432,6 +433,40 @@ const protectMathGlobally = (text) => {
         temp = parts.join('');
     }
     
+    // =========================================================================
+    // 新增：安全解析并提取 \textcolor{color}{content} 颜色块 (完美支持嵌套公式与多行)
+    // =========================================================================
+    let tempArr = [];
+    let i = 0;
+    while (i < temp.length) {
+        if (temp.startsWith('\\textcolor{', i)) {
+            let cStart = i + 11;
+            let cEnd = temp.indexOf('}', cStart);
+            if (cEnd !== -1 && temp[cEnd + 1] === '{') {
+                let color = temp.substring(cStart, cEnd);
+                let depth = 1;
+                let j = cEnd + 2;
+                // 严谨计算花括号深度，防止内部公式被拦腰斩断
+                while (j < temp.length && depth > 0) {
+                    if (temp[j] === '\\' && (temp[j+1] === '{' || temp[j+1] === '}')) { j += 2; continue; }
+                    if (temp[j] === '{') depth++;
+                    else if (temp[j] === '}') depth--;
+                    j++;
+                }
+                if (depth === 0) {
+                    let content = temp.substring(cEnd + 2, j - 1);
+                    tempArr.push(`@@C_START_${color}@@${content}@@C_END@@`);
+                    i = j;
+                    continue;
+                }
+            }
+        }
+        tempArr.push(temp[i]);
+        i++;
+    }
+    temp = tempArr.join('');
+    // =========================================================================
+
     // 6. 将涂改符号拆解为首尾标志
     temp = temp.replace(/~~([\s\S]*?)~~/g, '@@S_START@@$1@@S_END@@');
     
@@ -447,6 +482,7 @@ const restoreMathRecursive = (text, blocks) => {
 };
 
 // 【核心逻辑】：逐字扰动与涂改标签物理注入
+// 【核心逻辑】：逐字扰动、涂改标签与颜色状态机物理注入
 function applyJitterOnly(lineStr, maxTilt, maxY, renderState) {
     let resultHTML = '';
     let currentTilt = 0; let currentY = 0;
@@ -456,6 +492,9 @@ function applyJitterOnly(lineStr, maxTilt, maxY, renderState) {
     const maxScale = parseFloat(document.getElementById('charScale').value) || 0;
     const lSpace = parseFloat(document.getElementById('letterSpace').value) || 0;
 
+    // 确保颜色状态栈存在
+    if (!renderState.colorStack) renderState.colorStack = [];
+
     let i = 0;
     while(i < lineStr.length) {
         if (lineStr.substring(i, i+11) === '@@S_START@@') {
@@ -464,6 +503,25 @@ function applyJitterOnly(lineStr, maxTilt, maxY, renderState) {
         if (lineStr.substring(i, i+9) === '@@S_END@@') {
             renderState.isScribble = false; i += 9; continue;
         }
+        
+        // 👇 核心机制：解析颜色标记并压入状态栈 (支持颜色嵌套)
+        if (lineStr.substring(i).startsWith('@@C_START_')) {
+            let match = lineStr.substring(i).match(/^@@C_START_([a-zA-Z0-9#]+)@@/);
+            if (match) {
+                renderState.colorStack.push(match[1]);
+                i += match[0].length;
+                continue;
+            }
+        }
+        if (lineStr.substring(i, i+9) === '@@C_END@@') {
+            renderState.colorStack.pop();
+            i += 9;
+            continue;
+        }
+
+        // 提取当前应该显示的颜色
+        let currentColor = renderState.colorStack.length > 0 ? renderState.colorStack[renderState.colorStack.length - 1] : '';
+        let colorStyle = currentColor ? `color: ${currentColor};` : '';
 
         if (lineStr.substring(i, i+6).startsWith('@@MATH')) {
             let match = lineStr.substring(i).match(/^@@MATH_(ENV|BLOCK|INLINE|EF)_(\d+)@@/);
@@ -471,9 +529,11 @@ function applyJitterOnly(lineStr, maxTilt, maxY, renderState) {
                 if (renderState.isScribble) {
                     let mType = match[1];
                     let wrapClass = (mType === 'BLOCK' || mType === 'ENV') ? 'block-math-scribble' : 'inline-math-scribble';
-                    resultHTML += `<span class="${wrapClass}">${match[0]}<span class="scribble-line scribble-type-${currentScribbleStyle}"></span></span>`;
+                    resultHTML += `<span class="${wrapClass}" style="${colorStyle}">${match[0]}<span class="scribble-line scribble-type-${currentScribbleStyle}"></span></span>`;
                 } else {
-                    resultHTML += match[0];
+                    // 💡 神奇之处：包裹这层 span 后，底层的 MathJax 会自动继承 currentColor 并将其应用到 SVG 公式上！
+                    if (colorStyle) resultHTML += `<span style="${colorStyle}">${match[0]}</span>`;
+                    else resultHTML += match[0];
                 }
                 i += match[0].length;
                 continue;
@@ -513,12 +573,14 @@ function applyJitterOnly(lineStr, maxTilt, maxY, renderState) {
         let actualScale = 1.0 + currentScaleDiff;
 
         let scribbleHtml = renderState.isScribble ? `<span class="scribble-line scribble-type-${currentScribbleStyle}"></span>` : '';
-        resultHTML += `<span class="char-span" style="transform: translate(${currentX}px, ${currentY}px) rotate(${currentTilt}deg) scale(${actualScale}); margin-right: ${lSpace}px;">${char}${scribbleHtml}</span>`;
+        // 赋予单字 span 具体的颜色
+        resultHTML += `<span class="char-span" style="transform: translate(${currentX}px, ${currentY}px) rotate(${currentTilt}deg) scale(${actualScale}); margin-right: ${lSpace}px; ${colorStyle}">${char}${scribbleHtml}</span>`;
         i++;
     }
     return resultHTML;
 }
 
+// 【核心逻辑】：主渲染流程
 // 【核心逻辑】：主渲染流程
 async function renderContent() {
     window.isRenderingCanceled = false;
@@ -561,7 +623,8 @@ async function renderContent() {
     let lines = temp.split('\n');
     let stagingHtml = '';
     
-    let renderState = { isScribble: false }; 
+    // 👇 核心修改：加入了 colorStack 状态机，保障渲染初始化
+    let renderState = { isScribble: false, colorStack: [] }; 
     
     lines.forEach(line => {
         let trimmed = line.trim();
