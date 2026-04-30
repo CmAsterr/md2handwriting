@@ -3,35 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>markdown to handwriting</title>
-    
+    <title>md2handwriting</title>
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
-    
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-    window.MathJax = {
-      tex: { 
-          inlineMath: [['$', '$'], ['\\(', '\\)']], 
-          displayMath: [['$$', '$$'], ['\\[', '\\]']],
-          processEnvironments: true 
-      },
-      chtml: { matchFontHeight: false }
-    };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+    window.MathJax = {
+      tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['$$', '$$'], ['\\[', '\\]']],
+          processEnvironments: true,
+          packages: {'[+]': ['ams', 'color']}
+      },
+      chtml: { matchFontHeight: false },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js"></script>
 </head>
 <body>
     <div id="staging-area"></div>
 
     <div class="control-panel">
         <h2>排版参数控制台</h2>
-        
+
         <div class="font-scanner-box">
             <label class="text-blue">1️⃣ 正文字体</label>
             <label for="textFontInput" class="btn-scan empty-state" id="textBtnLabel">📁 导入本地字体...</label>
@@ -48,12 +49,12 @@
 
         <div class="font-scanner-box">
             <label class="text-orange">3️⃣ 仿真纸张背景</label>
-            
+
             <div style="display:flex; gap:5px; margin-bottom:8px;">
                 <button class="style-btn" onclick="setPresetBg('./仿真背景图/空白.jpg')">内置: 空白</button>
                 <button class="style-btn" onclick="setPresetBg('./仿真背景图/横线.jpg')">内置: 横线</button>
             </div>
-            
+
             <label for="bgImageInput" class="btn-scan btn-bg-gray" id="bgBtnLabel">上传背景图片</label>
             <input type="file" id="bgImageInput" accept="image/jpeg, image/png">
             <div id="bgPreview" class="bg-preview-box"></div>
@@ -66,7 +67,7 @@
                 <div class="style-selector" id="scribbleSelector">
                     <div class="style-btn active" data-val="1" onclick="setStyle('scribble', 1, this)">划线</div>
                     <div class="style-btn" data-val="2" onclick="setStyle('scribble', 2, this)">乱线</div>
-                    <div class="style-btn" data-val="3" onclick="setStyle('scribble', 3, this)">波浪</div>
+                    <div class="style-btn" data-val="3" onclick="setStyle('scribble', 3, this)">重涂</div>
                     <div class="style-btn" data-val="custom" onclick="setStyle('scribble', 'custom', this)">极客</div>
                 </div>
                 <textarea id="customScribbleCss" class="custom-css-input" placeholder="输入CSS 例如:&#10;background: rgba(255,0,0,0.5);" oninput="updateCustomCss()"></textarea>
@@ -173,8 +174,8 @@
             <div class="pane-title" style="flex-wrap: wrap; gap: 10px;">
                 <span>📝 Markdown & LaTeX 源码编辑区</span>
                 <div style="display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
-                    <label class="checkbox-wrapper" style="margin:0; color:white;" title="在行内公式的等号处自动断开，实现长公式自然换行">
-                        <input type="checkbox" id="splitMathEq" onchange="debounceRender()" checked> 等号自动折行
+                    <label class="checkbox-wrapper" style="margin:0; color:white;" title="将连续等号等顶层关系式整理成更自然的多行推导">
+                        <input type="checkbox" id="splitMathEq" onchange="debounceRender()" checked> 关系式自动整理
                     </label>
                     <label class="checkbox-wrapper" style="margin:0; color:white;">
                         <input type="checkbox" id="autoMath" onchange="debounceRender()"> 字母/数字转公式
@@ -218,7 +219,7 @@
     </div>
 
     <div id="export-modal" class="modal-overlay" style="display:none;">
-        <div class="modal-content" style="width: 350px;">
+        <div class="modal-content" style="width: 390px;">
             <div class="modal-header">导出设置</div>
             <div style="padding: 20px;">
                 <div class="export-group">
@@ -227,10 +228,17 @@
                 </div>
                 <div class="export-group">
                     <label>导出格式</label>
-                    <div class="radio-group">
+                    <div class="radio-group export-format-grid">
                         <label class="radio-label"><input type="radio" name="exportFormat" value="pdf" checked> 📄 PDF 文档</label>
                         <label class="radio-label"><input type="radio" name="exportFormat" value="zip"> 📦 ZIP 图片压缩包</label>
+                        <label class="radio-label wide"><input type="radio" name="exportFormat" value="longzip"> 🧩 按 --- 分段长图 ZIP</label>
                     </div>
+                </div>
+                <div class="export-group">
+                    <label class="checkbox-wrapper export-local-option">
+                        <input type="checkbox" id="useLocalExporter"> 本地加速导出
+                    </label>
+                    <div class="mini-hint">已启动 local-export-server.js 时可用，大作业更稳。</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -241,7 +249,7 @@
     </div>
 
     <div id="progress-modal" class="modal-overlay" style="display:none; z-index: 10000;">
-        <div class="modal-content" style="width: 350px; text-align: center; padding: 25px;">
+        <div class="modal-content" style="width: 360px; text-align: center; padding: 25px;">
             <h3 id="progress-text" style="margin-top:0; color: #1e293b;">⚙️ 正在准备导出...</h3>
             <div class="progress-bar-bg" style="width: 100%; height: 12px; background: #e2e8f0; border-radius: 6px; overflow: hidden; margin: 15px 0;">
                 <div id="progress-bar" class="progress-bar-fill" style="width: 0%; height: 100%; background: #10b981; transition: width 0.2s;"></div>
@@ -250,6 +258,13 @@
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/parser.js"></script>
+    <script src="js/fonts.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/exporter.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
