@@ -73,6 +73,13 @@
                 }
             }
         } else {
+            const rows = Math.round(7 + chaos * 3);
+            for (let i = 0; i < rows; i++) {
+                const y = 12 + i * (76 / Math.max(1, rows - 1)) + (r() - 0.5) * 5;
+                const c1y = y + (r() - 0.5) * 18;
+                const c2y = y + (r() - 0.5) * 18;
+                parts.push(path(`M${n(-4 + r() * 4)} ${n(y)} C${n(24 + r() * 12)} ${n(c1y)} ${n(66 + r() * 12)} ${n(c2y)} ${n(104 - r() * 4)} ${n(y + (r() - 0.5) * 8)}`, width * (0.86 + r() * 0.18), 0.82 + r() * 0.14));
+            }
             parts.push(path(`M18 78 C6 32 88 10 84 58 C80 100 18 92 24 48 C31 5 82 18 72 62 C63 96 32 78 40 42`, width * 1.02, 0.94));
             parts.push(path(`M26 20 C82 18 88 80 40 86 C8 88 16 36 54 32 C92 28 80 78 42 70`, width * 0.9, 0.9));
             parts.push(path(`M22 72 C42 52 58 46 80 24`, width * 0.88, 0.88));

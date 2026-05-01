@@ -55,6 +55,7 @@ node local-export-server.js
 
 - 可迁移 skill 在 `skills/md2handwriting-homework/`。
 - 通用提示词模板在 `prompts/homework-md2handwriting.md`。
+- skill 内也保存了一份可供其他 AI 读取的提示词：`skills/md2handwriting-homework/references/homework-md2handwriting-prompt.md`。
 - 本机 Codex 已安装同名 skill：`md2handwriting-homework`。
 
 ## 项目结构

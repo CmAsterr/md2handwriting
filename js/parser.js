@@ -110,10 +110,19 @@
         return relations;
     }
 
+    function relationChainScore(inner) {
+        return inner
+            .replace(/\\(?:left|right|mathrm|text|operatorname)\b/g, '')
+            .replace(/\\[a-zA-Z]+/g, 'xxxx')
+            .replace(/[{}\s]/g, '')
+            .length;
+    }
+
     function alignRelationChain(inner) {
         if (/\\begin\{|\\\\/.test(inner)) return inner;
         const relations = findTopLevelRelations(inner);
         if (relations.length < 2) return inner;
+        if (relationChainScore(inner) < 54) return inner;
 
         const parts = [];
         const ops = [];
@@ -126,11 +135,11 @@
         parts.push(inner.slice(last).trim());
         if (parts.some(part => part === '')) return inner;
 
-        const rows = [`${parts[0]} &${ops[0]} ${parts[1]}`];
+        const rows = [`${parts[0]} ${ops[0]} ${parts[1]}`];
         for (let i = 1; i < ops.length; i++) {
-            rows.push(`&${ops[i]} ${parts[i + 1]}`);
+            rows.push(`${ops[i]} ${parts[i + 1]}`);
         }
-        return `\\begin{aligned}${rows.join('\\\\') }\\end{aligned}`;
+        return `\\begin{array}{l}${rows.join('\\\\') }\\end{array}`;
     }
 
     function normalizeMath(raw, kind, options) {
@@ -159,7 +168,7 @@
         const index = blocks.push({
             type: 'math',
             raw: normalized,
-            display: kind === 'block' || kind === 'env' || normalized.includes('\\begin{aligned}')
+            display: kind === 'block' || kind === 'env' || /\\begin\{(?:aligned|array)\}/.test(normalized)
         }) - 1;
         return `@@MATH_${index}@@`;
     }
