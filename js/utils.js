@@ -87,11 +87,18 @@
             const pText = utils.el('progress-text');
             const pBar = utils.el('progress-bar');
             if (pText && text) pText.innerText = text;
-            if (pBar && Number.isFinite(percent)) pBar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+            if (pBar && Number.isFinite(percent)) {
+                const clamped = Math.max(0, Math.min(100, percent));
+                const floor = Number(HW.state.exportProgressFloor) || 0;
+                const next = Math.max(floor, clamped);
+                HW.state.exportProgressFloor = next;
+                pBar.style.width = `${next}%`;
+            }
         },
 
         showProgress(text) {
             const modal = utils.el('progress-modal');
+            HW.state.exportProgressFloor = 0;
             if (modal) modal.style.display = 'flex';
             utils.setProgress(text || '正在准备导出...', 0);
         },
