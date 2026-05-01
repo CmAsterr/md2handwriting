@@ -25,10 +25,30 @@
         return `M${n(x1)} ${n(y1)} Q${n(cx)} ${n(cy)} ${n(x2)} ${n(y2)}`;
     }
 
+    function slantedLine(r, index, chaos) {
+        const templates = [
+            [18, 82, 82, 18],
+            [15, 24, 85, 78],
+            [35, 88, 62, 12],
+            [7, 56, 94, 42],
+            [24, 12, 74, 90],
+            [10, 74, 66, 18],
+            [36, 20, 92, 66],
+            [8, 34, 70, 84]
+        ];
+        const base = templates[index % templates.length];
+        const jitter = 4 + chaos * 2.2;
+        const x1 = base[0] + (r() - 0.5) * jitter;
+        const y1 = base[1] + (r() - 0.5) * jitter;
+        const x2 = base[2] + (r() - 0.5) * jitter;
+        const y2 = base[3] + (r() - 0.5) * jitter;
+        return `M${n(x1)} ${n(y1)} L${n(x2)} ${n(y2)}`;
+    }
+
     function scribble(seed, style, widthScale = 1, chaosScale = 1) {
         const type = String(style || '1');
         const r = rng(hashString(`${seed}:scribble:${type}`));
-        const widthMul = Math.max(0.4, Math.min(2.5, Number(widthScale) || 1));
+        const widthMul = Math.max(0.15, Math.min(2.5, Number(widthScale) || 1));
         const chaos = Math.max(0, Math.min(3, Number(chaosScale) || 1));
         const width = (type === '1' ? 3.2 : type === '2' ? 3.0 : 3.3) * widthMul;
         const parts = [];
@@ -40,11 +60,10 @@
                 : `M${n(18 + r() * 8)} ${n(18 + r() * 8)} C${n(35 + r() * 8)} ${n(36 + r() * 8)} ${n(58 + r() * 8)} ${n(58 + r() * 8)} ${n(84 + r() * 6)} ${n(82 + r() * 8)}`;
             parts.push(path(d, width, 0.96));
         } else if (type === '2') {
-            const count = Math.round(5 + chaos * 4);
+            const count = Math.round(3 + chaos * 2);
             for (let i = 0; i < count; i++) {
-                parts.push(path(looseLine(r, i), width * (0.82 + r() * 0.28), 0.78 + r() * 0.18));
+                parts.push(path(slantedLine(r, i, chaos), width * (0.82 + r() * 0.22), 0.78 + r() * 0.18));
             }
-            parts.push(path(`M${n(22 + r() * 8)} ${n(85 + r() * 6)} C${n(40 + r() * 20)} ${n(64 + r() * 12)} ${n(62 + r() * 18)} ${n(38 + r() * 12)} ${n(82 + r() * 8)} ${n(15 + r() * 8)}`, width * 1.08, 0.94));
         } else {
             parts.push(path(`M18 78 C6 32 88 10 84 58 C80 100 18 92 24 48 C31 5 82 18 72 62 C63 96 32 78 40 42`, width * 1.02, 0.94));
             parts.push(path(`M26 20 C82 18 88 80 40 86 C8 88 16 36 54 32 C92 28 80 78 42 70`, width * 0.9, 0.9));

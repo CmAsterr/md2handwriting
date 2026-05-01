@@ -225,12 +225,26 @@ mjx-container, mjx-math { overflow: visible !important; }
     position: absolute;
     left: -3%;
     right: -3%;
-    top: -0.015em;
-    height: 3.4px;
+    top: -0.045em;
+    height: 4.2px;
     background: currentColor;
-    border-radius: 61% 39% 57% 43% / 58% 48% 52% 42%;
-    opacity: .97;
-    transform: rotate(-0.35deg) skewY(-1.2deg);
+    border-radius: 999px 55% 999px 70%;
+    clip-path: polygon(0 54%, 8% 42%, 19% 55%, 31% 38%, 46% 52%, 59% 44%, 72% 58%, 87% 41%, 100% 53%, 100% 74%, 88% 66%, 74% 78%, 58% 63%, 43% 75%, 27% 60%, 12% 72%, 0 66%);
+    opacity: .96;
+    transform: rotate(-0.45deg) skewX(-3deg);
+}
+#staging-area mjx-line::after,
+.paper-page mjx-line::after {
+    content: "";
+    position: absolute;
+    left: 4%;
+    right: 8%;
+    top: 0.08em;
+    height: 1.1px;
+    background: currentColor;
+    border-radius: 999px;
+    opacity: .28;
+    transform: rotate(0.35deg);
 }
 .hand-table {
     width: 100%;
