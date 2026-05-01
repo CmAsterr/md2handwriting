@@ -56,12 +56,21 @@
 
         while (i < line.length) {
             if (line.startsWith('@@S_START@@', i)) {
-                renderState.isScribble = true;
-                i += 11;
+                const end = line.indexOf('@@S_END@@', i + 11);
+                if (end !== -1) {
+                    const content = line.slice(i + 11, end);
+                    const childState = { isScribble: false, colorStack: [...renderState.colorStack] };
+                    const rendered = applyJitter(content, parsed, options, lineIndex, childState);
+                    const style = colorStyle(renderState);
+                    const seed = `${parsed.seed}:scribble-group:${lineIndex}:${i}`;
+                    result += `<span class="scribble-target scribble-group" style="${style}">${rendered}${HW.effects.scribble(seed, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`;
+                    i = end + 9;
+                } else {
+                    i += 11;
+                }
                 continue;
             }
             if (line.startsWith('@@S_END@@', i)) {
-                renderState.isScribble = false;
                 i += 9;
                 continue;
             }
@@ -85,12 +94,7 @@
                 const block = parsed.blocks[Number(tokenMatch[2])];
                 const style = colorStyle(renderState);
                 if (tokenMatch[1] === 'MATH') {
-                    if (renderState.isScribble) {
-                        const seed = `${parsed.seed}:math:${lineIndex}:${i}`;
-                        result += `<span class="scribble-target ${block && block.display ? 'block-math-scribble' : 'inline-math-scribble'}" style="${style}">${token}${HW.effects.scribble(seed, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`;
-                    } else {
-                        result += style ? `<span style="${style}">${token}</span>` : token;
-                    }
+                    result += style ? `<span style="${style}">${token}</span>` : token;
                 } else {
                     result += token;
                 }
@@ -100,9 +104,7 @@
 
             const ch = line[i];
             if (ch === ' ') {
-                result += renderState.isScribble
-                    ? `<span class="char-span" style="margin-right:${options.letterSpace}px;">&nbsp;${HW.effects.scribble(`${parsed.seed}:space:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`
-                    : ' ';
+                result += ' ';
                 i++;
                 continue;
             }
@@ -117,10 +119,7 @@
             currentScaleDiff = stepRandomWalk(currentScaleDiff, options.maxScale, random, 0.38);
 
             const actualScale = 1 + currentScaleDiff;
-            const scribble = renderState.isScribble
-                ? HW.effects.scribble(`${parsed.seed}:char:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)
-                : '';
-            result += `<span class="char-span" style="transform:translate(${currentX.toFixed(2)}px, ${currentY.toFixed(2)}px) rotate(${currentTilt.toFixed(2)}deg) scale(${actualScale.toFixed(3)}); margin-right:${options.letterSpace}px; ${colorStyle(renderState)}">${escapeHtml(ch)}${scribble}</span>`;
+            result += `<span class="char-span" style="transform:translate(${currentX.toFixed(2)}px, ${currentY.toFixed(2)}px) rotate(${currentTilt.toFixed(2)}deg) scale(${actualScale.toFixed(3)}); margin-right:${options.letterSpace}px; ${colorStyle(renderState)}">${escapeHtml(ch)}</span>`;
             i++;
         }
 
