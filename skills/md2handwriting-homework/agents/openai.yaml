@@ -1,0 +1,4 @@
+interface:
+  display_name: "MD2Handwriting Homework"
+  short_description: "Turn problem images into md2handwriting-ready homework Markdown."
+  default_prompt: "请识别题目图片，先列出题目识别核对，然后输出三份可直接用于 md2handwriting 的手写作业 Markdown。"

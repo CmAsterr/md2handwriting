@@ -1,0 +1,358 @@
+(function () {
+    const HW = window.HW = window.HW || {};
+    const { el, escapeHtml, hashString, rng } = HW.utils;
+
+    let renderTimeout = null;
+    let globalPageCounter = 0;
+
+    function readRenderOptions() {
+        return {
+            padTop: parseInt(el('padTop').value, 10),
+            padBottom: parseInt(el('padBottom').value, 10),
+            padLeft: parseInt(el('padLeft').value, 10),
+            padRight: parseInt(el('padRight').value, 10),
+            fontSize: parseInt(el('fontSize').value, 10),
+            mathSize: parseFloat(el('mathSize').value) || 0.85,
+            lineHeight: parseFloat(el('lineHeight').value) || 1.5,
+            wobble: parseFloat(el('wobble').value) || 0,
+            maxSlant: parseFloat(el('lineSlant').value) || 0,
+            maxTilt: parseFloat(el('charTilt').value) || 0,
+            maxY: parseFloat(el('charY').value) || 0,
+            maxX: parseFloat(el('charX').value) || 0,
+            maxScale: parseFloat(el('charScale').value) || 0,
+            letterSpace: parseFloat(el('letterSpace').value) || 0,
+            inkSize: parseFloat(el('inkSize').value) || 1,
+            scribbleWidth: parseFloat(el('scribbleWidth').value) || 1,
+            scribbleChaos: parseFloat(el('scribbleChaos').value) || 1,
+            splitMathEq: !!(el('splitMathEq') && el('splitMathEq').checked),
+            autoMath: !!(el('autoMath') && el('autoMath').checked),
+            removeEmptyLines: !!(el('removeEmptyLines') && el('removeEmptyLines').checked),
+            inkStyle: HW.state.inkStyle,
+            scribbleStyle: HW.state.scribbleStyle
+        };
+    }
+
+    function colorStyle(renderState) {
+        if (!renderState.colorStack.length) return '';
+        const color = renderState.colorStack[renderState.colorStack.length - 1];
+        if (!/^[#a-zA-Z0-9(),.%\s-]+$/.test(color)) return '';
+        return `color:${color};`;
+    }
+
+    function stepRandomWalk(current, max, random, factor) {
+        if (max <= 0) return 0;
+        const next = current + (random() - 0.5) * max * factor;
+        return Math.max(-max, Math.min(max, next));
+    }
+
+    function applyJitter(line, parsed, options, lineIndex, renderState) {
+        let result = '';
+        let i = 0;
+        let currentTilt = 0;
+        let currentY = 0;
+        let currentX = 0;
+        let currentScaleDiff = 0;
+        const random = rng(hashString(`${parsed.seed}:line:${lineIndex}:${line}`));
+
+        while (i < line.length) {
+            if (line.startsWith('@@S_START@@', i)) {
+                const end = line.indexOf('@@S_END@@', i + 11);
+                if (end !== -1) {
+                    const content = line.slice(i + 11, end);
+                    const childState = { isScribble: false, colorStack: [...renderState.colorStack] };
+                    const rendered = applyJitter(content, parsed, options, lineIndex, childState);
+                    const style = colorStyle(renderState);
+                    const seed = `${parsed.seed}:scribble-group:${lineIndex}:${i}`;
+                    result += `<span class="scribble-target scribble-group" style="${style}">${rendered}${HW.effects.scribble(seed, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`;
+                    i = end + 9;
+                } else {
+                    i += 11;
+                }
+                continue;
+            }
+            if (line.startsWith('@@S_END@@', i)) {
+                i += 9;
+                continue;
+            }
+            if (line.startsWith('@@C_START_', i)) {
+                const match = line.slice(i).match(/^@@C_START_([^@]+)@@/);
+                if (match) {
+                    renderState.colorStack.push(match[1]);
+                    i += match[0].length;
+                    continue;
+                }
+            }
+            if (line.startsWith('@@C_END@@', i)) {
+                renderState.colorStack.pop();
+                i += 9;
+                continue;
+            }
+
+            const tokenMatch = line.slice(i).match(/^@@(MATH|INK)_(\d+)@@/);
+            if (tokenMatch) {
+                const token = tokenMatch[0];
+                const block = parsed.blocks[Number(tokenMatch[2])];
+                const style = colorStyle(renderState);
+                if (tokenMatch[1] === 'MATH') {
+                    result += style ? `<span style="${style}">${token}</span>` : token;
+                } else {
+                    result += token;
+                }
+                i += token.length;
+                continue;
+            }
+
+            const ch = line[i];
+            if (ch === ' ') {
+                result += ' ';
+                i++;
+                continue;
+            }
+
+            currentTilt = HW.state.modes.tiltMode === 'random'
+                ? stepRandomWalk(currentTilt, options.maxTilt, random, 0.42)
+                : (HW.state.modes.tiltMode === 'left' ? -options.maxTilt : options.maxTilt);
+            currentY = HW.state.modes.yMode === 'random'
+                ? stepRandomWalk(currentY, options.maxY, random, 0.32)
+                : (HW.state.modes.yMode === 'up' ? -options.maxY : options.maxY);
+            currentX = stepRandomWalk(currentX, options.maxX, random, 0.48);
+            currentScaleDiff = stepRandomWalk(currentScaleDiff, options.maxScale, random, 0.38);
+
+            const actualScale = 1 + currentScaleDiff;
+            result += `<span class="char-span" style="transform:translate(${currentX.toFixed(2)}px, ${currentY.toFixed(2)}px) rotate(${currentTilt.toFixed(2)}deg) scale(${actualScale.toFixed(3)}); margin-right:${options.letterSpace}px; ${colorStyle(renderState)}">${escapeHtml(ch)}</span>`;
+            i++;
+        }
+
+        return result;
+    }
+
+    function lineKind(line, parsed) {
+        const trimmed = line.trim();
+        if (!trimmed) return 'blank';
+        if (trimmed === '@@PAGE_BREAK@@') return 'break';
+        if (HW.parser.isMathOnlyLine(trimmed, parsed.blocks)) return 'formula';
+        const plain = trimmed
+            .replace(/@@(?:MATH|INK)_\d+@@/g, 'x')
+            .replace(/@@C_START_[^@]+@@|@@C_END@@|@@S_START@@|@@S_END@@/g, '');
+        if (/^(\d+(?:\.\d+)*[.、]|[（(]\d+[)）]|[一二三四五六七八九十]+[、.])/.test(plain)) return 'question';
+        return 'normal';
+    }
+
+    function splitTableRow(line) {
+        let text = line.trim();
+        if (!text.includes('|')) return [];
+        if (text.startsWith('|')) text = text.slice(1);
+        if (text.endsWith('|')) text = text.slice(0, -1);
+
+        const cells = [];
+        let current = '';
+        let escaped = false;
+        for (const ch of text) {
+            if (ch === '\\' && !escaped) {
+                escaped = true;
+                current += ch;
+                continue;
+            }
+            if (ch === '|' && !escaped) {
+                cells.push(current.trim().replace(/\\\|/g, '|'));
+                current = '';
+            } else {
+                current += ch;
+            }
+            escaped = false;
+        }
+        cells.push(current.trim().replace(/\\\|/g, '|'));
+        return cells;
+    }
+
+    function isTableSeparator(line) {
+        const cells = splitTableRow(line);
+        return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell.trim()));
+    }
+
+    function isTableRow(line) {
+        const trimmed = line.trim();
+        return trimmed !== '' && trimmed !== '@@PAGE_BREAK@@' && trimmed.includes('|');
+    }
+
+    function collectTable(lines, start) {
+        if (!isTableRow(lines[start]) || !isTableSeparator(lines[start + 1] || '')) return null;
+        const rows = [splitTableRow(lines[start])];
+        let index = start + 2;
+        while (index < lines.length && isTableRow(lines[index]) && !isTableSeparator(lines[index])) {
+            rows.push(splitTableRow(lines[index]));
+            index++;
+        }
+        return { rows, nextIndex: index };
+    }
+
+    function renderTable(table, parsed, options, startIndex) {
+        const colCount = Math.max(...table.rows.map(row => row.length));
+        const html = ['<table class="hand-table"><tbody>'];
+        table.rows.forEach((row, rowIndex) => {
+            const tag = rowIndex === 0 ? 'th' : 'td';
+            html.push('<tr>');
+            for (let col = 0; col < colCount; col++) {
+                const cell = row[col] || '';
+                const cellState = { isScribble: false, colorStack: [] };
+                const rendered = applyJitter(cell, parsed, options, startIndex + rowIndex, cellState);
+                html.push(`<${tag}>${rendered}</${tag}>`);
+            }
+            html.push('</tr>');
+        });
+        html.push('</tbody></table>');
+        return html.join('');
+    }
+
+    function buildStagingHtml(parsed, options) {
+        const lines = parsed.text.split('\n');
+        const renderState = { isScribble: false, colorStack: [] };
+        const html = [];
+        for (let index = 0; index < lines.length; index++) {
+            const table = collectTable(lines, index);
+            if (table) {
+                html.push(renderTable(table, parsed, options, index));
+                renderState.isScribble = false;
+                renderState.colorStack = [];
+                index = table.nextIndex - 1;
+                continue;
+            }
+
+            const line = lines[index];
+            const kind = lineKind(line, parsed);
+            if (kind === 'break') {
+                html.push('<div class="page-break" data-page-break="true"></div>');
+                renderState.isScribble = false;
+                renderState.colorStack = [];
+                continue;
+            }
+            if (kind === 'blank') {
+                html.push('<div class="paragraph-gap"></div>');
+                continue;
+            }
+            let lineAngle = 0;
+            if (HW.state.modes.slantMode === 'random') {
+                const random = rng(hashString(`${parsed.seed}:slant:${index}:${line}`));
+                lineAngle = (random() * options.maxSlant * 2) - options.maxSlant;
+            } else {
+                lineAngle = HW.state.modes.slantMode === 'up' ? -options.maxSlant : options.maxSlant;
+            }
+            const extraMargin = Math.abs(Math.sin(lineAngle * Math.PI / 180) * (HW.config.page.width - options.padLeft - options.padRight));
+            const jittered = applyJitter(line, parsed, options, index, renderState);
+            const cls = kind === 'formula' ? 'formula-block' : `line-block ${kind === 'question' ? 'question-start' : kind === 'normal' && /^\s/.test(line) ? 'continuation' : ''}`;
+            html.push(`<div class="${cls}" style="transform:rotate(${lineAngle.toFixed(2)}deg);margin-bottom:${(extraMargin * 0.35).toFixed(2)}px;">${jittered}</div>`);
+        }
+        return HW.parser.restore(html.join(''), parsed.blocks);
+    }
+
+    function createNewPage(options, segment) {
+        globalPageCounter++;
+        const filterId = `handdrawn-wobble-${globalPageCounter}`;
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'paper-page';
+        pageDiv.dataset.segment = String(segment);
+        pageDiv.dataset.page = String(globalPageCounter);
+        pageDiv.style.padding = `${options.padTop}px ${options.padRight}px ${options.padBottom}px ${options.padLeft}px`;
+
+        const svgWrapper = document.createElement('div');
+        svgWrapper.innerHTML = `<svg style="position:absolute;width:0;height:0;overflow:hidden"><filter id="${filterId}"><feTurbulence type="fractalNoise" baseFrequency="0.015" numOctaves="2" result="noise"></feTurbulence><feDisplacementMap in="SourceGraphic" in2="noise" scale="${options.wobble}" xChannelSelector="R" yChannelSelector="G" class="wobble-map"></feDisplacementMap></filter></svg>`;
+        pageDiv.appendChild(svgWrapper);
+
+        const contentBox = document.createElement('div');
+        contentBox.className = 'content-box';
+        contentBox.style.fontSize = `${options.fontSize}px`;
+        contentBox.style.lineHeight = options.lineHeight;
+        contentBox.style.filter = `url(#${filterId})`;
+        pageDiv.appendChild(contentBox);
+        el('paper-container').appendChild(pageDiv);
+        return contentBox;
+    }
+
+    function applyMathJitter(parsed, options) {
+        document.querySelectorAll('#staging-area mjx-container').forEach((mjx, index) => {
+            const random = rng(hashString(`${parsed.seed}:mjx:${index}`));
+            const mTilt = (random() - 0.5) * options.maxTilt * 0.45;
+            const mY = (random() - 0.5) * options.maxY * 0.45;
+            const mScale = 1 + (random() - 0.5) * 0.035;
+            mjx.style.transform = `translate(0px, ${mY.toFixed(2)}px) rotate(${mTilt.toFixed(2)}deg) scale(${mScale.toFixed(3)})`;
+            if (!mjx.hasAttribute('display')) {
+                mjx.style.display = 'inline-block';
+                mjx.style.margin = '0 2px';
+            }
+        });
+    }
+
+    async function renderContent() {
+        HW.state.isRenderingCanceled = false;
+        const options = readRenderOptions();
+        document.documentElement.style.setProperty('--math-scale', options.mathSize);
+
+        const stageWidth = HW.config.page.width - options.padLeft - options.padRight;
+        options.inlineMathWidth = stageWidth;
+        const source = el('textInput').value || '';
+        HW.state.source = source;
+        HW.state.renderSeed = hashString(source);
+        const parsed = HW.parser.parse(source, options);
+        const stagingArea = el('staging-area');
+        stagingArea.style.width = `${stageWidth}px`;
+        stagingArea.style.fontSize = `${options.fontSize}px`;
+        stagingArea.style.lineHeight = options.lineHeight;
+        stagingArea.style.fontFamily = 'var(--text-font)';
+        stagingArea.innerHTML = buildStagingHtml(parsed, options);
+
+        await HW.utils.waitForMathJax();
+        if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([stagingArea]);
+        if (window.MathJax && MathJax.typesetPromise) await MathJax.typesetPromise([stagingArea]);
+        applyMathJitter(parsed, options);
+
+        const scrollArea = document.querySelector('.paper-scroll-area');
+        const previousScrollTop = scrollArea ? scrollArea.scrollTop : 0;
+        const container = el('paper-container');
+        container.innerHTML = '';
+        globalPageCounter = 0;
+
+        const maxHeight = HW.config.page.height - options.padTop - options.padBottom;
+        let segment = 1;
+        let currentBox = createNewPage(options, segment);
+        const children = Array.from(stagingArea.children);
+        for (const child of children) {
+            if (child.classList.contains('page-break')) {
+                segment++;
+                currentBox = createNewPage(options, segment);
+                continue;
+            }
+            currentBox.appendChild(child);
+            if (currentBox.offsetHeight > maxHeight && currentBox.children.length > 1) {
+                currentBox.removeChild(child);
+                currentBox = createNewPage(options, segment);
+                currentBox.appendChild(child);
+            }
+        }
+
+        document.querySelectorAll('.paper-page').forEach(page => {
+            const box = page.querySelector('.content-box');
+            if (box && box.innerText.trim() === '' && !box.querySelector('mjx-container') && !box.querySelector('.ink-blot')) page.remove();
+        });
+        Array.from(document.querySelectorAll('.paper-page')).forEach((page, index) => {
+            page.dataset.page = String(index + 1);
+        });
+        if (scrollArea) scrollArea.scrollTop = previousScrollTop;
+        return Array.from(document.querySelectorAll('.paper-page'));
+    }
+
+    function debounceRender() {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(() => {
+            if (HW.app && HW.app.saveState) HW.app.saveState();
+            renderContent();
+        }, 360);
+    }
+
+    function forceRender() {
+        clearTimeout(renderTimeout);
+        if (HW.app && HW.app.saveState) HW.app.saveState();
+        return renderContent();
+    }
+
+    HW.renderer = { readRenderOptions, renderContent, debounceRender, forceRender };
+})();

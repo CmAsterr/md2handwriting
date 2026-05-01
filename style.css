@@ -1,380 +1,335 @@
 * { box-sizing: border-box; }
 
 @font-face {
-    font-family: 'MathFallback';
-    src: local('Cambria Math'), local('Times New Roman'), local('Kaiti SC'), local('STKaiti');
-    unicode-range: U+2212, U+2211, U+03A3, U+00D7, U+221A, U+222B, U+221E; 
+    font-family: 'MyHandwriting';
+    src: url('./fonts/正文字体/handwritten.ttf');
+    font-display: swap;
 }
-:root { 
-    --text-font: 'MyHandwriting', 'Kaiti', 'STKaiti', serif; 
-    --math-font: 'MyHandwriting', 'Cambria Math', 'Times New Roman', serif;
-    --paper-bg-image: url('paper_bg.jpg'); 
-    --math-scale: 0.85; 
+
+:root {
+    --text-font: 'MyHandwriting', 'Kaiti', 'STKaiti', serif;
+    --math-font: 'MathJax_Math', 'Cambria Math', 'Times New Roman', serif;
+    --paper-bg-image: none;
+    --math-scale: 0.85;
+    --ink-color: #1c1c24;
 }
-@font-face { font-family: 'MyHandwriting'; src: url('handwritten.ttf'); }
 
-body { background-color: #1e1e1e; font-family: -apple-system, sans-serif; display: flex; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+body {
+    background-color: #1e1e1e;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    display: flex;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    overflow: hidden;
+}
 
-.control-panel { width: 340px; background: white; padding: 20px; box-shadow: 2px 0 15px rgba(0,0,0,0.5); overflow-y: auto; flex-shrink: 0; z-index: 10;}
+.control-panel {
+    width: 340px;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.5);
+    overflow-y: auto;
+    flex-shrink: 0;
+    z-index: 10;
+}
 .control-panel h2 { margin-top: 0; color: #1e293b; font-size: 18px; border-bottom: 2px solid #3b82f6; padding-bottom: 10px; }
 .control-group { margin-bottom: 12px; }
 .control-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 12px; color: #475569; }
 .control-group input[type="range"] { width: 100%; cursor: pointer; accent-color: #3b82f6; }
-
 .text-blue { color: #2563eb; } .text-green { color: #10b981; } .text-orange { color: #d97706; }
 
-.font-scanner-box { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e0; margin-bottom: 10px;}
+.font-scanner-box { background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e0; margin-bottom: 10px; }
 .font-scanner-box input[type="file"] { display: none; }
-
-.btn-scan { display: block; width: 100%; padding: 6px; background: #e2e8f0; color: #1e293b; text-align: center; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; margin: 0; border: none; outline: none;}
+.btn-scan { display: block; width: 100%; padding: 6px; background: #e2e8f0; color: #1e293b; text-align: center; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.2s; margin: 0; border: none; outline: none; }
 .btn-scan:hover { background: #cbd5e0; }
 .btn-scan.empty-state { background: transparent; color: #94a3b8; font-style: italic; font-weight: normal; border: 1px dashed #cbd5e1; }
-.btn-scan.empty-state:hover { background: #f1f5f9; }
+.btn-scan.empty-state:hover { background: #f1f5f9; transform: none !important; }
+.btn-bg-gray { color: #64748b !important; font-weight: normal !important; font-style: normal !important; background: #f1f5f9 !important; border: 1px solid #cbd5e1 !important; }
+.btn-bg-gray:hover { background: #e2e8f0 !important; }
 
-.font-list-container { max-height: 180px; overflow-y: auto !important; overflow-x: hidden; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 4px; background: white; }
+.font-list-container { max-height: 180px; overflow-y: auto !important; overflow-x: hidden; margin-top: 8px; border: 1px solid #e2e8f0; border-radius: 4px; background: #fff; }
 .font-list-container::-webkit-scrollbar { width: 8px; }
-.font-list-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px;}
+.font-list-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 .font-list-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 .font-list-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-.font-item { padding: 6px 8px; font-size: 13px; cursor: pointer; border-bottom: 1px solid #f1f5f9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.font-item:hover { background: #f8fafc; }
+.font-item {
+    padding: 6px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    white-space: normal;
+}
+.font-item:hover { background: #f8fafc; transform: none !important; scale: 1 !important; }
 .font-item.active { background: #eff6ff; color: #2563eb; font-weight: bold; border-left: 3px solid #3b82f6; }
+.font-item-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; }
+.tag-builtin, .tag-imported {
+    font-size: 11px;
+    margin-right: 6px;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-style: normal;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+.tag-builtin { color: #8b5cf6; background: #ede9fe; }
+.tag-imported { color: #10b981; background: #d1fae5; }
+.font-del-btn { color: #94a3b8; font-size: 16px; padding: 0 4px; margin-left: 5px; border-radius: 4px; flex-shrink: 0; transition: 0.2s; opacity: 0; visibility: hidden; }
+.font-item:hover .font-del-btn { opacity: 1; visibility: visible; }
+.font-del-btn:hover { color: #ef4444; background: #fee2e2; }
 
 .bg-preview-box { margin-top:8px; width:100%; height:60px; border:1px solid #e2e8f0; border-radius:4px; background-size:cover; background-repeat:no-repeat; background-position:center; display:none; }
-
 .style-selector { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; }
-.style-btn { flex: 1; padding: 6px; font-size: 12px; text-align: center; background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 4px; cursor: pointer; color: #475569; transition: all 0.2s; min-width: 40px;}
+.style-btn { flex: 1; padding: 6px; font-size: 12px; text-align: center; background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 4px; cursor: pointer; color: #475569; transition: all 0.2s; min-width: 40px; }
 .style-btn:hover { background: #e2e8f0; }
-.style-btn.active { background: #3b82f6; color: white; border-color: #2563eb; font-weight: bold;}
-
-.custom-css-input { width: 100%; height: 40px; padding: 4px 6px; font-size: 11px; font-family: 'Consolas', monospace; border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc; color: #334155; outline: none; transition: 0.2s; resize: none; margin-top: 4px; line-height: 1.4; display: none; }
+.style-btn.active { background: #3b82f6; color: #fff; border-color: #2563eb; font-weight: bold; }
+.custom-css-input { width: 100%; height: 40px; padding: 4px 6px; font-size: 11px; font-family: Consolas, monospace; border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc; color: #334155; outline: none; transition: 0.2s; resize: none; margin-top: 4px; line-height: 1.4; display: none; }
 .custom-css-input:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 2px rgba(59,130,246,0.1); }
-
-.btn-group { display: flex; gap: 5px; margin-bottom: 5px;}
-.mode-btn { flex: 1; padding: 4px; font-size: 12px; text-align: center; background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 4px; cursor: pointer; color: #475569;}
-.mode-btn.active { background: #3b82f6; color: white; border-color: #2563eb; font-weight: bold;}
-
-.checkbox-wrapper { display: flex; align-items: center; font-size: 12px; margin-top: 5px; cursor: pointer;}
-.checkbox-wrapper input { margin-right: 4px; cursor: pointer;}
-
-button.action-btn { width: 100%; padding: 10px; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.1s; }
+.btn-group { display: flex; gap: 5px; margin-bottom: 5px; }
+.mode-btn { flex: 1; padding: 4px; font-size: 12px; text-align: center; background: #f1f5f9; border: 1px solid #cbd5e0; border-radius: 4px; cursor: pointer; color: #475569; }
+.mode-btn.active { background: #3b82f6; color: #fff; border-color: #2563eb; font-weight: bold; }
+.checkbox-wrapper { display: flex; align-items: center; font-size: 12px; margin-top: 5px; cursor: pointer; }
+.checkbox-wrapper input { margin-right: 4px; cursor: pointer; }
+button.action-btn { width: 100%; padding: 10px; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-top: 8px; transition: 0.1s; }
 button.action-btn:hover { opacity: 0.9; }
 .btn-primary { background: #3b82f6; } .btn-success { background: #10b981; } .btn-danger { background: #ef4444; }
 
 .workspace { flex: 1; display: flex; padding: 20px; gap: 20px; overflow: hidden; }
-.pane-title { background: #333; color: #ddd; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 8px 8px 0 0; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;}
-
+.pane-title { background: #333; color: #ddd; padding: 8px 15px; font-size: 13px; font-weight: bold; border-radius: 8px 8px 0 0; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; }
 .header-actions { display: flex; gap: 8px; }
-.header-btn { padding: 5px 12px; color: white; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+.header-btn { padding: 5px 12px; color: #fff; border: none; border-radius: 4px; font-size: 12px; font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .header-btn:hover { opacity: 0.85; transform: translateY(-1px); }
-
 .editor-wrapper { flex: 1; min-width: 400px; display: flex; flex-direction: column; height: 100%; }
-textarea { flex: 1; width: 100%; padding: 15px; border: none; border-radius: 0 0 8px 8px; resize: none; font-family: 'Consolas', 'Monaco', monospace; font-size: 15px; line-height: 1.6; background-color: #252526; color: #d4d4d4; }
+textarea { flex: 1; width: 100%; padding: 15px; border: none; border-radius: 0 0 8px 8px; resize: none; font-family: Consolas, Monaco, monospace; font-size: 15px; line-height: 1.6; background-color: #252526; color: #d4d4d4; }
 textarea:focus { outline: none; }
-
 .paper-preview-wrapper { flex: 1.5; min-width: 600px; display: flex; flex-direction: column; height: 100%; }
 .paper-scroll-area { flex: 1; overflow-y: auto; overflow-x: auto; display: flex; flex-direction: column; align-items: flex-start; padding: 20px; border-radius: 0 0 8px 8px; background: #e2e8f0; }
 
-.paper-page { width: 800px; height: 1131px; flex-shrink: 0; background-image: var(--paper-bg-image); background-size: 100% 1131px; background-repeat: no-repeat; background-color: white; position: relative; margin: 0 auto 30px auto; box-shadow: 0 10px 25px rgba(0,0,0,0.3); overflow: hidden; color: #1c1c24; font-family: var(--text-font); }
+.paper-page {
+    width: 800px;
+    height: 1131px;
+    flex-shrink: 0;
+    background-image: var(--paper-bg-image);
+    background-size: 100% 1131px;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    position: relative;
+    margin: 0 auto 30px auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    overflow: hidden;
+    color: var(--ink-color);
+    font-family: var(--text-font);
+}
 .content-box { width: 100%; height: fit-content; transition: padding 0s; mix-blend-mode: multiply; }
+.line-block { display: block; transform-origin: left center; width: 100%; overflow-wrap: anywhere; word-break: break-word; margin: 0; }
+.line-block.question-start { margin-top: .28em; }
+.line-block.continuation { text-indent: 1.2em; }
+.formula-block { display: block; text-align: center; margin: .22em 0 .18em; }
+.paragraph-gap { height: .55em; }
+.char-span { position: relative; display: inline-block; white-space: pre-wrap; transform-origin: center center; }
 
-.line-block { display: block; transform-origin: left center; width: 100%; word-break: break-all;}
-.char-span { position: relative; display: inline-block; white-space: pre-wrap; } 
-
-/* 【彻底解决】：用实体标签 + Base64 编码，解决伪元素导出丢失的 Bug */
-.scribble-line { position: absolute; pointer-events: none; z-index: 5; left: -2px; right: -2px; }
-.scribble-line.scribble-type-1 { top: 50%; height: 1.5px; background: rgba(28,28,36,0.85); transform: translateY(-50%) rotate(-0.5deg); }
-.scribble-line.scribble-type-2 { 
-    top: 10%; bottom: 10%; 
-    background: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgdmlld0JveD0iMCAwIDIwIDIwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIj48cGF0aCBkPSJNMiwxOCBMNCwyIEw4LDE4IEwxMiw0IEwxNiwxOCBMMjAsNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMWMxYzI0IiBzdHJva2Utd2lkdGg9IjEuMiIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+") repeat-x; 
-    background-size: 10px 100%; opacity: 0.9; 
+.scribble-target { display: inline-block; position: relative; }
+.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -0.45em; right: -0.45em; top: -0.56em; bottom: -0.42em; mix-blend-mode: multiply; overflow: visible; }
+.scribble-group { line-height: inherit; vertical-align: baseline; }
+.scribble-group > .scribble-effect { top: 0; bottom: 0; }
+.scribble-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.scribble-svg path {
+    fill: none;
+    stroke: rgba(16, 16, 20, var(--a, .92));
+    stroke-width: var(--sw, 5);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 .35px .15px rgba(0,0,0,.32));
 }
-.scribble-line.scribble-type-3 { 
-    top: 15%; bottom: 15%; 
-    background: 
-        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PHBhdGggZD0iTTAgNSBRIDUgMCwgMTAgNSBUIDIwIDUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFjMWMyNCIgc3Ryb2tlLXdpZHRoPSIxLjAiLz48L3N2Zz4=") repeat-x 0 10% / 20px 10px, 
-        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PHBhdGggZD0iTTAgNSBRIDUgMCwgMTAgNSBUIDIwIDUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzFjMWMyNCIgc3Ryb2tlLXdpZHRoPSIwLjgiLz48L3N2Zz4=") repeat-x 10px 90% / 20px 10px, 
-        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIxMCI+PHBhdGggZD0iTTAgNSBRIDUgMTAsIDEwIDUgVCAyMCA1IiBmaWxsPSJub25lIiBzdHJva2U9IiMxYzFjMjQiIHN0cm9rZS13aWR0aD0iMS4wIi8+PC9zdmc+") repeat-x 5px 50% / 20px 10px; 
-    transform: rotate(0.5deg); opacity: 0.9; 
+.scribble-type-1 { transform: none; }
+.scribble-type-2 { left: -0.62em; right: -0.62em; }
+.scribble-type-3 { left: -0.72em; right: -0.72em; top: -0.68em; bottom: -0.54em; }
+.scribble-stroke {
+    position: absolute;
+    left: var(--x, 0%);
+    top: var(--y, 50%);
+    width: var(--w, 100%);
+    height: var(--h, 2px);
+    background: linear-gradient(90deg,
+        rgba(18,18,24,0) 0%,
+        rgba(18,18,24,calc(var(--a, .9) * .75)) 5%,
+        rgba(18,18,24,var(--a, .9)) 17%,
+        rgba(18,18,24,var(--a, .9)) 84%,
+        rgba(18,18,24,calc(var(--a, .9) * .7)) 94%,
+        rgba(18,18,24,0) 100%);
+    border-radius: 999px 70% 999px 55%;
+    clip-path: polygon(0 58%, 5% 32%, 17% 43%, 31% 28%, 46% 45%, 62% 31%, 78% 46%, 94% 34%, 100% 56%, 96% 76%, 81% 63%, 66% 82%, 47% 65%, 28% 78%, 11% 62%);
+    transform: rotate(var(--r, -2deg)) skewX(var(--sk, 0deg));
+    filter: blur(var(--b, .08px));
+    box-shadow: 0 0 var(--shadow, 0px) rgba(18, 18, 24, .55);
 }
+.scribble-type-1 .scribble-stroke { min-height: 1px; }
+.scribble-type-2 .scribble-stroke { min-height: 1px; }
+.scribble-type-3 .scribble-stroke { min-height: 1.1px; filter: blur(var(--b, .08px)); }
 
-/* 独立公式与行内公式的精准收缩包装，解决“涂一整行”问题 */
-.inline-math-scribble { display: inline-block; position: relative; }
-.block-math-scribble { display: block; width: fit-content; margin: 0 auto; position: relative; }
+.ink-blot { position: absolute; display: inline-block; pointer-events: none; z-index: 10; width: 34px; height: 25px; transform-origin: 50% 50%; }
+.ink-core, .ink-dot, .ink-smear {
+    position: absolute;
+    display: block;
+    background: rgba(28,28,36,.86);
+    mix-blend-mode: multiply;
+}
+.ink-core {
+    width: 18px;
+    height: 15px;
+    left: 8px;
+    top: 5px;
+    border-radius: 54% 46% 61% 39% / 45% 54% 46% 55%;
+    filter: blur(.75px);
+    box-shadow: inset 2px -2px 4px rgba(0,0,0,.38), 0 0 4px rgba(28,28,36,.2);
+}
+.ink-dot { width: var(--s, 4px); height: var(--s, 4px); left: var(--x, 0); top: var(--y, 0); border-radius: 50%; filter: blur(.25px); opacity: var(--a, .8); }
+.ink-smear { width: 34px; height: 8px; left: 0; top: 9px; border-radius: 50%; filter: blur(1px); opacity: .66; transform: rotate(var(--r, 0deg)); }
+.ink-type-1 .ink-dot:nth-of-type(n+5) { display: none; }
+.ink-type-2 .ink-core { width: 16px; height: 13px; }
+.ink-type-2 .ink-dot { opacity: .88; }
+.ink-type-3 .ink-core { width: 26px; height: 10px; left: 4px; border-radius: 50% 28% / 55% 70%; filter: blur(1px); }
 
-.ink-blot { position: absolute; display: inline-block; pointer-events: none; background: rgba(28,28,36,0.92); mix-blend-mode: multiply; z-index: 10; }
-.ink-type-1 { width: 16px; height: 16px; border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%; filter: blur(0.8px); box-shadow: inset 2px -2px 4px rgba(0,0,0,0.5); }
-.ink-type-2 { width: 26px; height: 16px; border-radius: 20% 80% 30% 70% / 60% 30% 70% 40%; filter: blur(0.6px); box-shadow: 5px 3px 1px -1px rgba(28,28,36,0.8), -3px -2px 1px -1px rgba(28,28,36,0.6); }
-.ink-type-3 { width: 38px; height: 10px; border-radius: 50% 20% / 50% 80%; filter: blur(1.2px); opacity: 0.9; }
-
-/* ==============================================================
-   MathJax 公式引擎终极修复：完美融合手写字体与原生线条结构
-   ============================================================== */
-
-/* 1. 核心修复：坚决保护内部用于裁剪线条的 overflow: hidden，只允许最外层防抖动溢出 */
 mjx-container, mjx-math { overflow: visible !important; }
-
-/* 2. 强制穿透：必须带有 * 号！强制打穿 MathJax 深层的 <mjx-c> 标签，让 g, h, D 恢复手写体 */
-#staging-area mjx-container *, .paper-page mjx-container * { 
-    font-family: var(--math-font) !important; 
+#staging-area mjx-mi mjx-c,
+#staging-area mjx-mn mjx-c,
+#staging-area mjx-mo mjx-c,
+.paper-page mjx-mi mjx-c,
+.paper-page mjx-mn mjx-c,
+.paper-page mjx-mo mjx-c {
+    font-family: var(--math-font) !important;
 }
-
-/* 3. 护航拉伸组件：利用更高的 CSS 权重 (3个层级 > 2个层级)，强行把上划线、绝对值的字体控制权抢回给原生字体，防止黑块！ */
-#staging-area mjx-container mjx-stretchy-v *, #staging-area mjx-container mjx-stretchy-h *,
-.paper-page mjx-container mjx-stretchy-v *, .paper-page mjx-container mjx-stretchy-h * {
+#staging-area mjx-over *,
+#staging-area mjx-under *,
+#staging-area mjx-stretchy-v *,
+#staging-area mjx-stretchy-h *,
+.paper-page mjx-over *,
+.paper-page mjx-under *,
+.paper-page mjx-stretchy-v *,
+.paper-page mjx-stretchy-h * {
     font-family: 'MathJax_Main', 'Cambria Math', 'Times New Roman', serif !important;
 }
-
-/* 4. 基础布局保持原版不变 */
-#staging-area mjx-container.MathJax, .paper-page mjx-container.MathJax { font-size: calc(1em * var(--math-scale)) !important; display: inline-block; margin: 0 2px; padding-bottom: 2px; }
-#staging-area mjx-container.MathJax[display="true"], .paper-page mjx-container.MathJax[display="true"] { max-width: 100%; overflow-x: hidden; overflow-y: visible !important; margin: 10px 0 !important; }
+#staging-area mjx-line,
+.paper-page mjx-line {
+    border-top: none !important;
+    height: 0.13em !important;
+    min-height: 1px;
+    overflow: visible !important;
+    position: relative;
+}
+#staging-area mjx-line::before,
+.paper-page mjx-line::before {
+    content: "";
+    position: absolute;
+    left: -3%;
+    right: -3%;
+    top: -0.045em;
+    height: 4.2px;
+    background: currentColor;
+    border-radius: 999px 55% 999px 70%;
+    clip-path: polygon(0 54%, 8% 42%, 19% 55%, 31% 38%, 46% 52%, 59% 44%, 72% 58%, 87% 41%, 100% 53%, 100% 74%, 88% 66%, 74% 78%, 58% 63%, 43% 75%, 27% 60%, 12% 72%, 0 66%);
+    opacity: .96;
+    transform: rotate(-0.45deg) skewX(-3deg);
+}
+#staging-area mjx-line::after,
+.paper-page mjx-line::after {
+    content: "";
+    position: absolute;
+    left: 4%;
+    right: 8%;
+    top: 0.08em;
+    height: 1.1px;
+    background: currentColor;
+    border-radius: 999px;
+    opacity: .28;
+    transform: rotate(0.35deg);
+}
+.hand-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: .35em 0 .45em;
+    color: var(--ink-color);
+}
+.hand-table th,
+.hand-table td {
+    border: 1.2px solid rgba(28, 28, 36, .78);
+    padding: .18em .28em;
+    vertical-align: top;
+    font-weight: normal;
+    overflow-wrap: anywhere;
+}
+.hand-table th { text-align: center; }
+#staging-area mjx-container.MathJax,
+.paper-page mjx-container.MathJax {
+    font-size: calc(1em * var(--math-scale)) !important;
+    display: inline-block;
+    margin: 0 2px;
+    padding-bottom: 2px;
+}
+#staging-area mjx-container.MathJax[display="true"],
+.paper-page mjx-container.MathJax[display="true"] {
+    max-width: 100%;
+    overflow-x: hidden;
+    overflow-y: visible !important;
+    margin: 8px 0 !important;
+}
 #staging-area { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
 
 .editable-val { display: inline-block; min-width: 30px; padding: 0 4px; background-color: #f1f5f9; border: 1px dashed transparent; border-radius: 4px; cursor: text; transition: all 0.2s; text-align: center; }
 .editable-val:hover { border-color: #94a3b8; background-color: #e2e8f0; }
-.editable-val:focus { outline: none; border-color: #3b82f6; background-color: #ffffff; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-.modal-content { background: white; border-radius: 8px; width: 80%; max-width: 800px; display: flex; flex-direction: column; overflow: hidden; }
-.modal-header { padding: 15px; font-weight: bold; font-size: 16px; border-bottom: 1px solid #eee; background: #f8fafc;}
+.editable-val:focus { outline: none; border-color: #3b82f6; background-color: #fff; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,.8); z-index: 9999; display: flex; justify-content: center; align-items: center; }
+.modal-content { background: #fff; border-radius: 8px; width: 80%; max-width: 800px; display: flex; flex-direction: column; overflow: hidden; }
+.modal-header { padding: 15px; font-weight: bold; font-size: 16px; border-bottom: 1px solid #eee; background: #f8fafc; }
 .img-container { width: 100%; height: 60vh; background: #333; }
 .img-container img { display: block; max-width: 100%; }
-
-.modal-footer { padding: 15px; display: flex; justify-content: space-between; align-items: center; gap: 15px; border-top: 1px solid #eee; background: #f8fafc; flex-wrap: wrap;}
+.modal-footer { padding: 15px; display: flex; justify-content: space-between; align-items: center; gap: 15px; border-top: 1px solid #eee; background: #f8fafc; flex-wrap: wrap; }
 .crop-controls { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px; }
 .crop-controls span { font-size: 13px; font-weight: bold; color: #475569; }
 .crop-controls input[type="range"] { flex: 1; cursor: pointer; accent-color: #3b82f6; }
-.crop-controls input[type="number"] { width: 65px; font-size: 13px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; outline: none; transition: 0.2s;}
-.crop-controls input[type="number"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);}
+.crop-controls input[type="number"] { width: 65px; font-size: 13px; padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; outline: none; transition: 0.2s; }
+.crop-controls input[type="number"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,.2); }
 .modal-footer-btns { display: flex; gap: 10px; }
-
-.btn-cancel, .btn-confirm { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;}
+.btn-cancel, .btn-confirm { padding: 8px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
 .btn-cancel { background: #e2e8f0; color: #475569; }
 .btn-cancel:hover { background: #cbd5e1; }
-.btn-confirm { background: #3b82f6; color: white; }
+.btn-confirm { background: #3b82f6; color: #fff; }
 .btn-confirm:hover { background: #2563eb; }
-
 .export-group { margin-bottom: 15px; text-align: left; }
 .export-group label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #475569; }
 .export-group input[type="text"] { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 14px; outline: none; }
 .export-group input[type="text"]:focus { border-color: #3b82f6; }
 .radio-group { display: flex; gap: 10px; }
 .radio-label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 14px; color: #333; }
+.export-format-grid { flex-wrap: wrap; }
+.export-format-grid .radio-label { flex: 1 1 150px; }
+.export-format-grid .radio-label.wide { flex-basis: 100%; }
+.export-local-option { margin: 0 !important; color: #475569; }
+.mini-hint { color: #64748b; font-size: 12px; line-height: 1.35; }
 
-/* ==============================================================
-   【修复核心3：移动端与窄屏响应式适配黑魔法】
-   将分栏改为上下堆叠，利用 transform 智能缩放 A4 纸张以适应手机屏幕
-   ============================================================== */
 @media (max-width: 950px) and (orientation: portrait) {
-    /* 将主容器改为竖向排列，允许页面整体滚动 */
-    body { 
-        flex-direction: column; 
-        height: auto; 
-        min-height: 100vh; 
-        overflow-y: auto; 
-        overflow-x: hidden; 
-    }
-    
-    /* 控制台占满全宽，固定高度并允许内部滚动 */
-    .control-panel { 
-        width: 100%; 
-        height: 45vh; 
-        border-right: none;
-        border-bottom: 2px solid #cbd5e1;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        z-index: 20;
-    }
-    
-    /* 工作区重排为上下堆叠结构 */
-    .workspace { 
-        flex-direction: column; 
-        padding: 10px; 
-        gap: 15px; 
-        overflow: visible; 
-    }
-    
-    /* 源码编辑区高度收缩，适配手机键盘 */
-    .editor-wrapper { 
-        min-width: 100%; 
-        height: 35vh; 
-    }
-    
-    /* 预览区高度放开，由内部纸张撑起 */
-    .paper-preview-wrapper { 
-        min-width: 100%; 
-        height: auto; 
-        overflow: visible; 
-    }
-    
-    .paper-scroll-area { 
-        overflow: hidden; 
-        padding: 10px 0;
-        background: transparent; 
-    }
-    
-    /* 核心魔法：根据设备宽度，动态计算缩小比例 (手机屏宽 / A4纸宽840px) */
-    .paper-page { 
-        transform-origin: top center; 
-        transform: scale(min(1, calc(100vw / 840))); 
-        /* 根据缩放比例动态抵消底部多余的空白占位 */
-        margin-bottom: calc(-1131px * (1 - min(1, calc(100vw / 840))) + 15px);
-    }
+    body { flex-direction: column; height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
+    .control-panel { width: 100%; height: 45vh; border-right: none; border-bottom: 2px solid #cbd5e1; box-shadow: 0 4px 6px rgba(0,0,0,.1); z-index: 20; }
+    .workspace { flex-direction: column; padding: 10px; gap: 15px; overflow: visible; }
+    .editor-wrapper { min-width: 100%; height: 35vh; }
+    .paper-preview-wrapper { min-width: 100%; height: auto; overflow: visible; }
+    .paper-scroll-area { overflow: hidden; padding: 10px 0; background: transparent; }
+    .paper-page { transform-origin: top center; transform: scale(min(1, calc(100vw / 840))); margin-bottom: calc(-1131px * (1 - min(1, calc(100vw / 840))) + 15px); }
 }
 
-/* ==============================================================
-   字体列表优雅升级：彩色 Tag 标签与删除按钮
-   ============================================================== */
-.font-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    white-space: normal; /* 重置，让内部 span 去处理溢出 */
-}
-.font-item-text {
-    flex: 1;
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis;
-    display: flex;
-    align-items: center;
-}
-/* 内置字体标签 (优雅紫) */
-.tag-builtin { 
-    color: #8b5cf6; background: #ede9fe; 
-    font-size: 11px; margin-right: 6px; padding: 2px 5px; 
-    border-radius: 4px; font-style: normal; font-weight: bold;
-    flex-shrink: 0;
-}
-/* 导入字体标签 (清新绿) */
-.tag-imported { 
-    color: #10b981; background: #d1fae5; 
-    font-size: 11px; margin-right: 6px; padding: 2px 5px; 
-    border-radius: 4px; font-style: normal; font-weight: bold;
-    flex-shrink: 0;
-}
-/* 删除按钮 (平时提前占位隐藏，悬浮时显现，彻底杜绝高度跳动) */
-.font-del-btn { 
-    color: #94a3b8; font-size: 16px; padding: 0 4px; margin-left: 5px;
-    border-radius: 4px; flex-shrink: 0; transition: 0.2s;
-    /* 核心修复：用透明度代替 display:none，提前占据物理空间 */
-    opacity: 0; visibility: hidden; 
-}
-.font-item:hover .font-del-btn { 
-    opacity: 1; visibility: visible; 
-}
-.font-del-btn:hover { color: #ef4444; background: #fee2e2; }
-
-/* 修复 1：强制禁止所有扫描按钮在悬浮时发生变形或放大 */
-.btn-scan:hover, .empty-state:hover {
-    transform: none !important;
-    scale: 1 !important;
-}
-
-/* 修复 2：仿真背景专属的灰色正常按钮 (不倾斜、灰色字) */
-.btn-bg-gray {
-    color: #64748b !important;
-    font-weight: normal !important;
-    font-style: normal !important;
-    background: #f1f5f9 !important;
-    border: 1px solid #cbd5e1 !important;
-}
-.btn-bg-gray:hover {
-    background: #e2e8f0 !important;
-}
-
-/* ==============================================================
-   终极修复：绝对锁死字体列表项的悬浮变形效果
-   ============================================================== */
-/* 修复 3：强制锁死字体列表中的每一个选项，禁止它们在悬浮时整体放大或变形 */
-#textFontList .font-item:hover, 
-#mathFontList .font-item:hover {
-    transform: none !important; /* 彻底删除任何变形 */
-    scale: 1 !important;      /* 强制缩放比例为 1 (不放大) */
-}
-
-/* ==============================================================
-   手机横屏终极修复：右侧全局统一滚动，取消框内独立滑动
-   ============================================================== */
 @media (max-width: 950px) and (orientation: landscape) {
-    html {
-        position: fixed !important;
-        top: 0 !important; bottom: 0 !important; 
-        left: 0 !important; right: 0 !important;
-        overflow: hidden !important;
-        background-color: #1e1e1e !important;
-    }
-    
-    body {
-        position: absolute !important; 
-        top: 0 !important; bottom: 0 !important; 
-        left: 0 !important; right: 0 !important;
-        margin: 0 !important; padding: 0 !important;
-        display: flex !important;
-        flex-direction: row !important;
-        overflow: hidden !important; /* Body本身不滚动，权责下放 */
-    }
-    
-    /* 左侧控制台：固定在左边，允许独立上下滑 */
-    .control-panel { 
-        width: 300px !important; 
-        min-width: 300px !important; 
-        flex-shrink: 0 !important; 
-        height: 100dvh !important; 
-        border-right: 2px solid #cbd5e1 !important;
-        border-bottom: none !important;
-        overflow-y: auto !important;
-        margin: 0 !important;
-    }
-    
-    /* 右侧工作区：接管一切横向和纵向滑动！ */
-    .workspace { 
-        display: flex !important;
-        flex-direction: row !important; 
-        height: 100dvh !important; 
-        flex: 1 !important; 
-        /* 👇 核心：开启右侧统一整体滚动 */
-        overflow: auto !important; 
-        -webkit-overflow-scrolling: touch !important;
-        padding: 15px !important; 
-        align-items: flex-start !important; /* 顶部对齐，让内容自然往下延伸 */
-        gap: 15px !important;
-        margin: 0 !important;
-    }
-    
-    /* 编辑区与纸张区：禁止内部滚动，依靠内容撑高自身 */
-    .editor-wrapper { 
-        width: 380px !important; 
-        min-width: 380px !important; 
-        flex-shrink: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        height: auto !important; /* 跟随纸张高度一起变长 */
-    }
-    .editor-wrapper textarea {
-        flex: 1 !important;
-        /* 👇 核心：把输入框强行撑到和纸张一样高（默认约1131px） */
-        min-height: 1150px !important; 
-        height: 100% !important; 
-        overflow: visible !important; /* 禁用内部滑条，依靠外层 workspace 统一滑动 */
-    }
-    
-    .paper-preview-wrapper { 
-        width: 860px !important; 
-        min-width: 860px !important; 
-        flex-shrink: 0 !important;
-        display: flex !important;
-        flex-direction: column !important;
-        height: auto !important; 
-    }
-    .paper-scroll-area {
-        flex: 1 !important;
-        height: auto !important; 
-        overflow: visible !important; /* 禁用内部滑条 */
-        padding: 0 !important; 
-    }
-    
-    .paper-page { 
-        transform: none !important; 
-        margin: 0 auto !important; 
-    }
+    html { position: fixed !important; inset: 0 !important; overflow: hidden !important; background-color: #1e1e1e !important; }
+    body { position: absolute !important; inset: 0 !important; margin: 0 !important; padding: 0 !important; display: flex !important; flex-direction: row !important; overflow: hidden !important; }
+    .control-panel { width: 300px !important; min-width: 300px !important; flex-shrink: 0 !important; height: 100dvh !important; border-right: 2px solid #cbd5e1 !important; border-bottom: none !important; overflow-y: auto !important; margin: 0 !important; }
+    .workspace { display: flex !important; flex-direction: row !important; height: 100dvh !important; flex: 1 !important; overflow: auto !important; -webkit-overflow-scrolling: touch !important; padding: 15px !important; align-items: flex-start !important; gap: 15px !important; margin: 0 !important; }
+    .editor-wrapper { width: 380px !important; min-width: 380px !important; flex-shrink: 0 !important; display: flex !important; flex-direction: column !important; height: auto !important; }
+    .editor-wrapper textarea { flex: 1 !important; min-height: 1150px !important; height: 100% !important; overflow: visible !important; }
+    .paper-preview-wrapper { width: 860px !important; min-width: 860px !important; flex-shrink: 0 !important; display: flex !important; flex-direction: column !important; height: auto !important; }
+    .paper-scroll-area { flex: 1 !important; height: auto !important; overflow: visible !important; padding: 0 !important; }
+    .paper-page { transform: none !important; margin: 0 auto !important; }
 }
