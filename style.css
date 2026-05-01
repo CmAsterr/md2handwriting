@@ -132,22 +132,29 @@ textarea:focus { outline: none; }
 .char-span { position: relative; display: inline-block; white-space: pre-wrap; transform-origin: center center; }
 
 .scribble-target { display: inline-block; position: relative; }
-.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -7px; right: -7px; top: -0.22em; bottom: -0.2em; mix-blend-mode: multiply; }
+.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -5px; right: -5px; top: -0.14em; bottom: -0.14em; mix-blend-mode: multiply; }
 .scribble-stroke {
     position: absolute;
     left: var(--x, 0%);
     top: var(--y, 50%);
     width: var(--w, 100%);
     height: var(--h, 2px);
-    background: rgba(18, 18, 24, var(--a, .9));
-    border-radius: 999px;
+    background: linear-gradient(90deg,
+        rgba(18,18,24,0) 0%,
+        rgba(18,18,24,calc(var(--a, .9) * .75)) 5%,
+        rgba(18,18,24,var(--a, .9)) 17%,
+        rgba(18,18,24,var(--a, .9)) 84%,
+        rgba(18,18,24,calc(var(--a, .9) * .7)) 94%,
+        rgba(18,18,24,0) 100%);
+    border-radius: 999px 70% 999px 55%;
+    clip-path: polygon(0 58%, 5% 32%, 17% 43%, 31% 28%, 46% 45%, 62% 31%, 78% 46%, 94% 34%, 100% 56%, 96% 76%, 81% 63%, 66% 82%, 47% 65%, 28% 78%, 11% 62%);
     transform: rotate(var(--r, -2deg)) skewX(var(--sk, 0deg));
     filter: blur(var(--b, .08px));
     box-shadow: 0 0 var(--shadow, 0px) rgba(18, 18, 24, .55);
 }
-.scribble-type-1 .scribble-stroke { min-height: 2px; }
-.scribble-type-2 .scribble-stroke { min-height: 1.7px; }
-.scribble-type-3 .scribble-stroke { min-height: 3px; filter: blur(var(--b, .35px)); }
+.scribble-type-1 .scribble-stroke { min-height: 1px; }
+.scribble-type-2 .scribble-stroke { min-height: 1px; }
+.scribble-type-3 .scribble-stroke { min-height: 1.1px; filter: blur(var(--b, .08px)); }
 
 .ink-blot { position: absolute; display: inline-block; pointer-events: none; z-index: 10; width: 34px; height: 25px; transform-origin: 50% 50%; }
 .ink-core, .ink-dot, .ink-smear {
@@ -173,10 +180,75 @@ textarea:focus { outline: none; }
 .ink-type-3 .ink-core { width: 26px; height: 10px; left: 4px; border-radius: 50% 28% / 55% 70%; filter: blur(1px); }
 
 mjx-container, mjx-math { overflow: visible !important; }
-#staging-area mjx-container.MathJax *,
-.paper-page mjx-container.MathJax * {
+#staging-area mjx-mi mjx-c,
+#staging-area mjx-mn mjx-c,
+#staging-area mjx-mo mjx-c,
+.paper-page mjx-mi mjx-c,
+.paper-page mjx-mn mjx-c,
+.paper-page mjx-mo mjx-c {
     font-family: var(--math-font) !important;
 }
+#staging-area mjx-over *,
+#staging-area mjx-under *,
+#staging-area mjx-stretchy-v *,
+#staging-area mjx-stretchy-h *,
+.paper-page mjx-over *,
+.paper-page mjx-under *,
+.paper-page mjx-stretchy-v *,
+.paper-page mjx-stretchy-h * {
+    font-family: 'MathJax_Main', 'Cambria Math', 'Times New Roman', serif !important;
+}
+#staging-area mjx-line,
+.paper-page mjx-line {
+    border-top: none !important;
+    height: 0.08em !important;
+    min-height: 1px;
+    overflow: visible !important;
+    position: relative;
+}
+#staging-area mjx-line::before,
+.paper-page mjx-line::before {
+    content: "";
+    position: absolute;
+    left: -3%;
+    right: -3%;
+    top: -0.045em;
+    height: 2.2px;
+    background: currentColor;
+    border-radius: 999px 55% 999px 70%;
+    clip-path: polygon(0 54%, 8% 42%, 19% 55%, 31% 38%, 46% 52%, 59% 44%, 72% 58%, 87% 41%, 100% 53%, 100% 74%, 88% 66%, 74% 78%, 58% 63%, 43% 75%, 27% 60%, 12% 72%, 0 66%);
+    opacity: .92;
+    transform: rotate(-0.55deg) skewX(-4deg);
+}
+#staging-area mjx-line::after,
+.paper-page mjx-line::after {
+    content: "";
+    position: absolute;
+    left: 4%;
+    right: 8%;
+    top: 0.045em;
+    height: 0.85px;
+    background: currentColor;
+    border-radius: 999px;
+    opacity: .28;
+    transform: rotate(0.35deg);
+}
+.hand-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: .35em 0 .45em;
+    color: var(--ink-color);
+}
+.hand-table th,
+.hand-table td {
+    border: 1.2px solid rgba(28, 28, 36, .78);
+    padding: .18em .28em;
+    vertical-align: top;
+    font-weight: normal;
+    overflow-wrap: anywhere;
+}
+.hand-table th { text-align: center; }
 #staging-area mjx-container.MathJax,
 .paper-page mjx-container.MathJax {
     font-size: calc(1em * var(--math-scale)) !important;

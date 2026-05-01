@@ -19,13 +19,13 @@
     function scribble(seed, style, intensity = 1) {
         const type = String(style || '1');
         const profiles = {
-            '1': { type: '1', count: 5, yMin: 34, yMax: 64, xMin: -12, xMax: 2, wMin: 102, wMax: 124, hMin: 2.2, hMax: 4.4, aMin: 0.78, aMax: 0.96, rMin: -10, rMax: 10, bMin: 0.02, bMax: 0.22, skMin: -5, skMax: 5, shadowMin: 0, shadowMax: 1.4 },
-            '2': { type: '2', count: 8, yMin: 16, yMax: 78, xMin: -18, xMax: 8, wMin: 84, wMax: 130, hMin: 1.8, hMax: 4.0, aMin: 0.66, aMax: 0.94, rMin: -26, rMax: 26, bMin: 0.02, bMax: 0.36, skMin: -11, skMax: 11, shadowMin: 0, shadowMax: 1.1 },
-            '3': { type: '3', count: 12, yMin: 8, yMax: 88, xMin: -20, xMax: 10, wMin: 92, wMax: 138, hMin: 2.8, hMax: 6.4, aMin: 0.70, aMax: 0.98, rMin: -20, rMax: 20, bMin: 0.10, bMax: 0.58, skMin: -9, skMax: 9, shadowMin: 0.4, shadowMax: 2.0 }
+            '1': { type: '1', count: 2, yMin: 42, yMax: 58, xMin: -8, xMax: 3, wMin: 98, wMax: 116, hMin: 1.05, hMax: 1.75, aMin: 0.82, aMax: 0.96, rMin: -5, rMax: 5, bMin: 0, bMax: 0.08, skMin: -3, skMax: 3, shadowMin: 0, shadowMax: 0.25 },
+            '2': { type: '2', count: 6, yMin: 22, yMax: 76, xMin: -14, xMax: 8, wMin: 78, wMax: 124, hMin: 0.95, hMax: 1.85, aMin: 0.72, aMax: 0.94, rMin: -20, rMax: 20, bMin: 0, bMax: 0.12, skMin: -7, skMax: 7, shadowMin: 0, shadowMax: 0.35 },
+            '3': { type: '3', count: 10, yMin: 12, yMax: 88, xMin: -18, xMax: 10, wMin: 84, wMax: 132, hMin: 1.05, hMax: 2.1, aMin: 0.74, aMax: 0.98, rMin: -22, rMax: 22, bMin: 0.02, bMax: 0.16, skMin: -8, skMax: 8, shadowMin: 0.05, shadowMax: 0.45 }
         };
         const profile = profiles[type] || profiles['1'];
         const lines = [];
-        const scaled = Math.max(3, Math.round(profile.count * Math.max(0.75, intensity)));
+        const scaled = Math.max(profile.count, Math.round(profile.count * Math.max(0.75, intensity)));
         for (let i = 0; i < scaled; i++) lines.push(stroke(seed, i, profile));
         return `<span class="scribble-effect scribble-type-${type}">${lines.join('')}</span>`;
     }

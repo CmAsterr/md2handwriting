@@ -138,21 +138,97 @@
         return 'normal';
     }
 
+    function splitTableRow(line) {
+        let text = line.trim();
+        if (!text.includes('|')) return [];
+        if (text.startsWith('|')) text = text.slice(1);
+        if (text.endsWith('|')) text = text.slice(0, -1);
+
+        const cells = [];
+        let current = '';
+        let escaped = false;
+        for (const ch of text) {
+            if (ch === '\\' && !escaped) {
+                escaped = true;
+                current += ch;
+                continue;
+            }
+            if (ch === '|' && !escaped) {
+                cells.push(current.trim().replace(/\\\|/g, '|'));
+                current = '';
+            } else {
+                current += ch;
+            }
+            escaped = false;
+        }
+        cells.push(current.trim().replace(/\\\|/g, '|'));
+        return cells;
+    }
+
+    function isTableSeparator(line) {
+        const cells = splitTableRow(line);
+        return cells.length > 1 && cells.every(cell => /^:?-{3,}:?$/.test(cell.trim()));
+    }
+
+    function isTableRow(line) {
+        const trimmed = line.trim();
+        return trimmed !== '' && trimmed !== '@@PAGE_BREAK@@' && trimmed.includes('|');
+    }
+
+    function collectTable(lines, start) {
+        if (!isTableRow(lines[start]) || !isTableSeparator(lines[start + 1] || '')) return null;
+        const rows = [splitTableRow(lines[start])];
+        let index = start + 2;
+        while (index < lines.length && isTableRow(lines[index]) && !isTableSeparator(lines[index])) {
+            rows.push(splitTableRow(lines[index]));
+            index++;
+        }
+        return { rows, nextIndex: index };
+    }
+
+    function renderTable(table, parsed, options, startIndex) {
+        const colCount = Math.max(...table.rows.map(row => row.length));
+        const html = ['<table class="hand-table"><tbody>'];
+        table.rows.forEach((row, rowIndex) => {
+            const tag = rowIndex === 0 ? 'th' : 'td';
+            html.push('<tr>');
+            for (let col = 0; col < colCount; col++) {
+                const cell = row[col] || '';
+                const cellState = { isScribble: false, colorStack: [] };
+                const rendered = applyJitter(cell, parsed, options, startIndex + rowIndex, cellState);
+                html.push(`<${tag}>${rendered}</${tag}>`);
+            }
+            html.push('</tr>');
+        });
+        html.push('</tbody></table>');
+        return html.join('');
+    }
+
     function buildStagingHtml(parsed, options) {
         const lines = parsed.text.split('\n');
         const renderState = { isScribble: false, colorStack: [] };
         const html = [];
-        lines.forEach((line, index) => {
+        for (let index = 0; index < lines.length; index++) {
+            const table = collectTable(lines, index);
+            if (table) {
+                html.push(renderTable(table, parsed, options, index));
+                renderState.isScribble = false;
+                renderState.colorStack = [];
+                index = table.nextIndex - 1;
+                continue;
+            }
+
+            const line = lines[index];
             const kind = lineKind(line, parsed);
             if (kind === 'break') {
                 html.push('<div class="page-break" data-page-break="true"></div>');
                 renderState.isScribble = false;
                 renderState.colorStack = [];
-                return;
+                continue;
             }
             if (kind === 'blank') {
                 html.push('<div class="paragraph-gap"></div>');
-                return;
+                continue;
             }
             let lineAngle = 0;
             if (HW.state.modes.slantMode === 'random') {
@@ -165,7 +241,7 @@
             const jittered = applyJitter(line, parsed, options, index, renderState);
             const cls = kind === 'formula' ? 'formula-block' : `line-block ${kind === 'question' ? 'question-start' : kind === 'normal' && /^\s/.test(line) ? 'continuation' : ''}`;
             html.push(`<div class="${cls}" style="transform:rotate(${lineAngle.toFixed(2)}deg);margin-bottom:${(extraMargin * 0.35).toFixed(2)}px;">${jittered}</div>`);
-        });
+        }
         return HW.parser.restore(html.join(''), parsed.blocks);
     }
 
