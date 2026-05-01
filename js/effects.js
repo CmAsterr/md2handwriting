@@ -27,17 +27,17 @@
 
     function slantedLine(r, index, chaos) {
         const templates = [
-            [18, 82, 82, 18],
-            [15, 24, 85, 78],
-            [35, 88, 62, 12],
-            [7, 56, 94, 42],
-            [24, 12, 74, 90],
-            [10, 74, 66, 18],
-            [36, 20, 92, 66],
-            [8, 34, 70, 84]
+            [3, 58, 97, 42],
+            [0, 46, 94, 50],
+            [8, 70, 88, 60],
+            [12, 34, 96, 26],
+            [2, 82, 76, 66],
+            [22, 24, 88, 18],
+            [18, 52, 82, 45],
+            [30, 72, 96, 56]
         ];
         const base = templates[index % templates.length];
-        const jitter = 4 + chaos * 2.2;
+        const jitter = 2.4 + chaos * 1.3;
         const x1 = base[0] + (r() - 0.5) * jitter;
         const y1 = base[1] + (r() - 0.5) * jitter;
         const x2 = base[2] + (r() - 0.5) * jitter;
@@ -63,6 +63,14 @@
             const count = Math.round(3 + chaos * 2);
             for (let i = 0; i < count; i++) {
                 parts.push(path(slantedLine(r, i, chaos), width * (0.82 + r() * 0.22), 0.78 + r() * 0.18));
+            }
+            if (chaos > 0.8) {
+                const ticks = Math.round(chaos);
+                for (let i = 0; i < ticks; i++) {
+                    const x = 28 + r() * 48;
+                    const y = 24 + r() * 42;
+                    parts.push(path(`M${n(x)} ${n(y)} L${n(x + 5 + r() * 8)} ${n(y + 18 + r() * 18)}`, width * 0.72, 0.72));
+                }
             }
         } else {
             parts.push(path(`M18 78 C6 32 88 10 84 58 C80 100 18 92 24 48 C31 5 82 18 72 62 C63 96 32 78 40 42`, width * 1.02, 0.94));
