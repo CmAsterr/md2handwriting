@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>md2handwriting</title>
 
-    <link rel="stylesheet" href="style.css?v=10.4">
+    <link rel="stylesheet" href="style.css?v=10.5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
@@ -90,8 +90,12 @@
             <input type="range" id="inkSize" min="0.5" max="5" step="0.1" value="1.0">
         </div>
         <div class="control-group">
-            <label>涂改随机歪斜: <span id="valScribbleRand" class="editable-val" contenteditable="true">1.0</span> 倍</label>
-            <input type="range" id="scribbleRand" min="0" max="5" step="0.1" value="1.0">
+            <label>涂改笔画粗细: <span id="valScribbleWidth" class="editable-val" contenteditable="true">1.0</span> 倍</label>
+            <input type="range" id="scribbleWidth" min="0.4" max="2.5" step="0.1" value="1.0">
+        </div>
+        <div class="control-group">
+            <label>涂改凌乱度: <span id="valScribbleChaos" class="editable-val" contenteditable="true">1.0</span> 倍</label>
+            <input type="range" id="scribbleChaos" min="0" max="3" step="0.1" value="1.0">
         </div>
 
         <hr style="border:0; border-top:1px solid #e2e8f0; margin:15px 0;">
@@ -259,13 +263,13 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=10.4"></script>
-    <script src="js/utils.js?v=10.4"></script>
-    <script src="js/effects.js?v=10.4"></script>
-    <script src="js/parser.js?v=10.4"></script>
-    <script src="js/fonts.js?v=10.4"></script>
-    <script src="js/renderer.js?v=10.4"></script>
-    <script src="js/exporter.js?v=10.4"></script>
-    <script src="js/app.js?v=10.4"></script>
+    <script src="js/config.js?v=10.5"></script>
+    <script src="js/utils.js?v=10.5"></script>
+    <script src="js/effects.js?v=10.5"></script>
+    <script src="js/parser.js?v=10.5"></script>
+    <script src="js/fonts.js?v=10.5"></script>
+    <script src="js/renderer.js?v=10.5"></script>
+    <script src="js/exporter.js?v=10.5"></script>
+    <script src="js/app.js?v=10.5"></script>
 </body>
 </html>

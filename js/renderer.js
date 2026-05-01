@@ -22,7 +22,8 @@
             maxScale: parseFloat(el('charScale').value) || 0,
             letterSpace: parseFloat(el('letterSpace').value) || 0,
             inkSize: parseFloat(el('inkSize').value) || 1,
-            scribbleRand: parseFloat(el('scribbleRand').value) || 1,
+            scribbleWidth: parseFloat(el('scribbleWidth').value) || 1,
+            scribbleChaos: parseFloat(el('scribbleChaos').value) || 1,
             splitMathEq: !!(el('splitMathEq') && el('splitMathEq').checked),
             autoMath: !!(el('autoMath') && el('autoMath').checked),
             removeEmptyLines: !!(el('removeEmptyLines') && el('removeEmptyLines').checked),
@@ -86,7 +87,7 @@
                 if (tokenMatch[1] === 'MATH') {
                     if (renderState.isScribble) {
                         const seed = `${parsed.seed}:math:${lineIndex}:${i}`;
-                        result += `<span class="scribble-target ${block && block.display ? 'block-math-scribble' : 'inline-math-scribble'}" style="${style}">${token}${HW.effects.scribble(seed, options.scribbleStyle, options.scribbleRand)}</span>`;
+                        result += `<span class="scribble-target ${block && block.display ? 'block-math-scribble' : 'inline-math-scribble'}" style="${style}">${token}${HW.effects.scribble(seed, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`;
                     } else {
                         result += style ? `<span style="${style}">${token}</span>` : token;
                     }
@@ -100,7 +101,7 @@
             const ch = line[i];
             if (ch === ' ') {
                 result += renderState.isScribble
-                    ? `<span class="char-span" style="margin-right:${options.letterSpace}px;">&nbsp;${HW.effects.scribble(`${parsed.seed}:space:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleRand)}</span>`
+                    ? `<span class="char-span" style="margin-right:${options.letterSpace}px;">&nbsp;${HW.effects.scribble(`${parsed.seed}:space:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)}</span>`
                     : ' ';
                 i++;
                 continue;
@@ -117,7 +118,7 @@
 
             const actualScale = 1 + currentScaleDiff;
             const scribble = renderState.isScribble
-                ? HW.effects.scribble(`${parsed.seed}:char:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleRand)
+                ? HW.effects.scribble(`${parsed.seed}:char:${lineIndex}:${i}`, options.scribbleStyle, options.scribbleWidth, options.scribbleChaos)
                 : '';
             result += `<span class="char-span" style="transform:translate(${currentX.toFixed(2)}px, ${currentY.toFixed(2)}px) rotate(${currentTilt.toFixed(2)}deg) scale(${actualScale.toFixed(3)}); margin-right:${options.letterSpace}px; ${colorStyle(renderState)}">${escapeHtml(ch)}${scribble}</span>`;
             i++;

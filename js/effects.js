@@ -25,11 +25,12 @@
         return `M${n(x1)} ${n(y1)} Q${n(cx)} ${n(cy)} ${n(x2)} ${n(y2)}`;
     }
 
-    function scribble(seed, style, intensity = 1) {
+    function scribble(seed, style, widthScale = 1, chaosScale = 1) {
         const type = String(style || '1');
         const r = rng(hashString(`${seed}:scribble:${type}`));
-        const scale = Math.max(0.85, Math.min(1.65, Number(intensity) || 1));
-        const width = type === '1' ? 5.2 * scale : type === '2' ? 4.8 * scale : 5.4 * scale;
+        const widthMul = Math.max(0.4, Math.min(2.5, Number(widthScale) || 1));
+        const chaos = Math.max(0, Math.min(3, Number(chaosScale) || 1));
+        const width = (type === '1' ? 3.2 : type === '2' ? 3.0 : 3.3) * widthMul;
         const parts = [];
 
         if (type === '1') {
@@ -39,7 +40,7 @@
                 : `M${n(18 + r() * 8)} ${n(18 + r() * 8)} C${n(35 + r() * 8)} ${n(36 + r() * 8)} ${n(58 + r() * 8)} ${n(58 + r() * 8)} ${n(84 + r() * 6)} ${n(82 + r() * 8)}`;
             parts.push(path(d, width, 0.96));
         } else if (type === '2') {
-            const count = Math.round(8 * Math.max(0.9, scale));
+            const count = Math.round(5 + chaos * 4);
             for (let i = 0; i < count; i++) {
                 parts.push(path(looseLine(r, i), width * (0.82 + r() * 0.28), 0.78 + r() * 0.18));
             }
@@ -49,7 +50,7 @@
             parts.push(path(`M26 20 C82 18 88 80 40 86 C8 88 16 36 54 32 C92 28 80 78 42 70`, width * 0.9, 0.9));
             parts.push(path(`M22 72 C42 52 58 46 80 24`, width * 0.88, 0.88));
             parts.push(path(`M18 28 C42 44 60 58 88 74`, width * 0.86, 0.86));
-            const extra = Math.round(4 * Math.max(0.9, scale));
+            const extra = Math.round(2 + chaos * 3);
             for (let i = 0; i < extra; i++) {
                 parts.push(path(looseLine(r, i + 3), width * (0.72 + r() * 0.22), 0.72 + r() * 0.18));
             }

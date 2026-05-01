@@ -9,7 +9,7 @@
             'padTop', 'padBottom', 'padLeft', 'padRight',
             'fontSize', 'mathSize', 'lineHeight', 'wobble',
             'lineSlant', 'charTilt', 'charY', 'charX',
-            'charScale', 'letterSpace', 'inkSize', 'scribbleRand'
+            'charScale', 'letterSpace', 'inkSize', 'scribbleWidth', 'scribbleChaos'
         ],
         defaults: {
             modes: { tiltMode: 'random', yMode: 'random', slantMode: 'random' },
