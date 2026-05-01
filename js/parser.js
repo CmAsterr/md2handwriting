@@ -91,13 +91,14 @@
         for (let i = 0; i < tex.length; i++) {
             const ch = tex[i];
             if (ch === '\\') {
-                const op = commandOps.find(item => tex.startsWith(item, i));
+                const command = tex.slice(i).match(/^\\[a-zA-Z]+/);
+                const op = command ? commandOps.find(item => item === command[0]) : commandOps.find(item => tex.startsWith(item, i));
                 if (op && depth === 0) {
                     relations.push({ index: i, op, len: op.length });
                     i += op.length - 1;
                     continue;
                 }
-                i++;
+                if (command) i += command[0].length - 1;
                 continue;
             }
             if (ch === '{' || ch === '(' || ch === '[') depth++;
