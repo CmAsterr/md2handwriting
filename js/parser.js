@@ -126,11 +126,35 @@
         return Math.max(42, Math.floor(width / approxGlyphWidth));
     }
 
+    function buildWrappedRelationRows(parts, ops, threshold) {
+        const lineBudget = Math.floor(threshold * 1.45);
+        const rows = [];
+        let current = parts[0];
+        let currentScore = relationChainScore(current);
+
+        for (let i = 0; i < ops.length; i++) {
+            const segment = `${ops[i]} ${parts[i + 1]}`;
+            const segmentScore = relationChainScore(segment);
+            if (i > 0 && currentScore + segmentScore > lineBudget) {
+                rows.push(current);
+                current = segment;
+                currentScore = segmentScore;
+            } else {
+                current += ` ${segment}`;
+                currentScore += segmentScore;
+            }
+        }
+
+        if (current.trim()) rows.push(current);
+        return rows;
+    }
+
     function alignRelationChain(inner, options) {
         if (/\\begin\{|\\\\/.test(inner)) return inner;
         const relations = findTopLevelRelations(inner);
         if (relations.length < 2) return inner;
-        if (relationChainScore(inner) <= relationWrapThreshold(options)) return inner;
+        const threshold = relationWrapThreshold(options);
+        if (relationChainScore(inner) <= threshold) return inner;
 
         const parts = [];
         const ops = [];
@@ -143,10 +167,8 @@
         parts.push(inner.slice(last).trim());
         if (parts.some(part => part === '')) return inner;
 
-        const rows = [`${parts[0]} ${ops[0]} ${parts[1]}`];
-        for (let i = 1; i < ops.length; i++) {
-            rows.push(`${ops[i]} ${parts[i + 1]}`);
-        }
+        const rows = buildWrappedRelationRows(parts, ops, threshold);
+        if (rows.length < 2) return inner;
         return `\\begin{array}{l}${rows.join('\\\\') }\\end{array}`;
     }
 
