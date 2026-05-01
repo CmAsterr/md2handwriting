@@ -132,7 +132,20 @@ textarea:focus { outline: none; }
 .char-span { position: relative; display: inline-block; white-space: pre-wrap; transform-origin: center center; }
 
 .scribble-target { display: inline-block; position: relative; }
-.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -5px; right: -5px; top: -0.14em; bottom: -0.14em; mix-blend-mode: multiply; }
+.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -0.45em; right: -0.45em; top: -0.56em; bottom: -0.42em; mix-blend-mode: multiply; overflow: visible; }
+.scribble-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.scribble-svg path {
+    fill: none;
+    stroke: rgba(16, 16, 20, var(--a, .92));
+    stroke-width: var(--sw, 5);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+    filter: drop-shadow(0 .35px .15px rgba(0,0,0,.32));
+}
+.scribble-type-1 { top: -0.36em; bottom: -0.28em; transform: rotate(-3deg); }
+.scribble-type-2 { left: -0.62em; right: -0.62em; }
+.scribble-type-3 { left: -0.72em; right: -0.72em; top: -0.68em; bottom: -0.54em; }
 .scribble-stroke {
     position: absolute;
     left: var(--x, 0%);
@@ -201,7 +214,7 @@ mjx-container, mjx-math { overflow: visible !important; }
 #staging-area mjx-line,
 .paper-page mjx-line {
     border-top: none !important;
-    height: 0.08em !important;
+    height: 0.13em !important;
     min-height: 1px;
     overflow: visible !important;
     position: relative;
@@ -212,13 +225,13 @@ mjx-container, mjx-math { overflow: visible !important; }
     position: absolute;
     left: -3%;
     right: -3%;
-    top: -0.045em;
-    height: 2.2px;
+    top: -0.015em;
+    height: 4.2px;
     background: currentColor;
     border-radius: 999px 55% 999px 70%;
     clip-path: polygon(0 54%, 8% 42%, 19% 55%, 31% 38%, 46% 52%, 59% 44%, 72% 58%, 87% 41%, 100% 53%, 100% 74%, 88% 66%, 74% 78%, 58% 63%, 43% 75%, 27% 60%, 12% 72%, 0 66%);
-    opacity: .92;
-    transform: rotate(-0.55deg) skewX(-4deg);
+    opacity: .96;
+    transform: rotate(-0.45deg) skewX(-3deg);
 }
 #staging-area mjx-line::after,
 .paper-page mjx-line::after {
@@ -226,8 +239,8 @@ mjx-container, mjx-math { overflow: visible !important; }
     position: absolute;
     left: 4%;
     right: 8%;
-    top: 0.045em;
-    height: 0.85px;
+    top: 0.08em;
+    height: 1.1px;
     background: currentColor;
     border-radius: 999px;
     opacity: .28;

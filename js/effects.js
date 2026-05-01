@@ -2,32 +2,60 @@
     const HW = window.HW = window.HW || {};
     const { hashString, rng } = HW.utils;
 
-    function stroke(seed, index, profile) {
-        const r = rng(hashString(`${seed}:stroke:${index}:${profile.type}`));
-        const y = profile.yMin + r() * (profile.yMax - profile.yMin);
-        const x = profile.xMin + r() * (profile.xMax - profile.xMin);
-        const w = profile.wMin + r() * (profile.wMax - profile.wMin);
-        const h = profile.hMin + r() * (profile.hMax - profile.hMin);
-        const a = profile.aMin + r() * (profile.aMax - profile.aMin);
-        const rot = profile.rMin + r() * (profile.rMax - profile.rMin);
-        const blur = profile.bMin + r() * (profile.bMax - profile.bMin);
-        const skew = profile.skMin + r() * (profile.skMax - profile.skMin);
-        const shadow = profile.shadowMin + r() * (profile.shadowMax - profile.shadowMin);
-        return `<span class="scribble-stroke" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--w:${w.toFixed(1)}%;--h:${h.toFixed(2)}px;--a:${a.toFixed(2)};--r:${rot.toFixed(2)}deg;--b:${blur.toFixed(2)}px;--sk:${skew.toFixed(2)}deg;--shadow:${shadow.toFixed(2)}px"></span>`;
+    function n(value) {
+        return Number(value).toFixed(1).replace(/\.0$/, '');
+    }
+
+    function path(d, width, alpha = 0.92) {
+        return `<path d="${d}" pathLength="100" style="--sw:${n(width)};--a:${n(alpha)}"></path>`;
+    }
+
+    function edgePoint(r, side) {
+        if (side === 0) return [8 + r() * 16, 12 + r() * 76];
+        if (side === 1) return [76 + r() * 16, 12 + r() * 76];
+        if (side === 2) return [12 + r() * 76, 8 + r() * 16];
+        return [12 + r() * 76, 76 + r() * 16];
+    }
+
+    function looseLine(r, index) {
+        const [x1, y1] = edgePoint(r, index % 4);
+        const [x2, y2] = edgePoint(r, (index + 2 + Math.floor(r() * 2)) % 4);
+        const cx = 50 + (r() - 0.5) * 34;
+        const cy = 50 + (r() - 0.5) * 46;
+        return `M${n(x1)} ${n(y1)} Q${n(cx)} ${n(cy)} ${n(x2)} ${n(y2)}`;
     }
 
     function scribble(seed, style, intensity = 1) {
         const type = String(style || '1');
-        const profiles = {
-            '1': { type: '1', count: 2, yMin: 42, yMax: 58, xMin: -8, xMax: 3, wMin: 98, wMax: 116, hMin: 1.05, hMax: 1.75, aMin: 0.82, aMax: 0.96, rMin: -5, rMax: 5, bMin: 0, bMax: 0.08, skMin: -3, skMax: 3, shadowMin: 0, shadowMax: 0.25 },
-            '2': { type: '2', count: 6, yMin: 22, yMax: 76, xMin: -14, xMax: 8, wMin: 78, wMax: 124, hMin: 0.95, hMax: 1.85, aMin: 0.72, aMax: 0.94, rMin: -20, rMax: 20, bMin: 0, bMax: 0.12, skMin: -7, skMax: 7, shadowMin: 0, shadowMax: 0.35 },
-            '3': { type: '3', count: 10, yMin: 12, yMax: 88, xMin: -18, xMax: 10, wMin: 84, wMax: 132, hMin: 1.05, hMax: 2.1, aMin: 0.74, aMax: 0.98, rMin: -22, rMax: 22, bMin: 0.02, bMax: 0.16, skMin: -8, skMax: 8, shadowMin: 0.05, shadowMax: 0.45 }
-        };
-        const profile = profiles[type] || profiles['1'];
-        const lines = [];
-        const scaled = Math.max(profile.count, Math.round(profile.count * Math.max(0.75, intensity)));
-        for (let i = 0; i < scaled; i++) lines.push(stroke(seed, i, profile));
-        return `<span class="scribble-effect scribble-type-${type}">${lines.join('')}</span>`;
+        const r = rng(hashString(`${seed}:scribble:${type}`));
+        const scale = Math.max(0.85, Math.min(1.65, Number(intensity) || 1));
+        const width = type === '1' ? 5.2 * scale : type === '2' ? 4.8 * scale : 5.4 * scale;
+        const parts = [];
+
+        if (type === '1') {
+            const flip = r() > 0.5 ? 1 : -1;
+            const d = flip > 0
+                ? `M${n(17 + r() * 8)} ${n(80 + r() * 10)} C${n(34 + r() * 8)} ${n(58 + r() * 10)} ${n(56 + r() * 8)} ${n(34 + r() * 8)} ${n(82 + r() * 7)} ${n(13 + r() * 8)}`
+                : `M${n(18 + r() * 8)} ${n(18 + r() * 8)} C${n(35 + r() * 8)} ${n(36 + r() * 8)} ${n(58 + r() * 8)} ${n(58 + r() * 8)} ${n(84 + r() * 6)} ${n(82 + r() * 8)}`;
+            parts.push(path(d, width, 0.96));
+        } else if (type === '2') {
+            const count = Math.round(8 * Math.max(0.9, scale));
+            for (let i = 0; i < count; i++) {
+                parts.push(path(looseLine(r, i), width * (0.82 + r() * 0.28), 0.78 + r() * 0.18));
+            }
+            parts.push(path(`M${n(22 + r() * 8)} ${n(85 + r() * 6)} C${n(40 + r() * 20)} ${n(64 + r() * 12)} ${n(62 + r() * 18)} ${n(38 + r() * 12)} ${n(82 + r() * 8)} ${n(15 + r() * 8)}`, width * 1.08, 0.94));
+        } else {
+            parts.push(path(`M18 78 C6 32 88 10 84 58 C80 100 18 92 24 48 C31 5 82 18 72 62 C63 96 32 78 40 42`, width * 1.02, 0.94));
+            parts.push(path(`M26 20 C82 18 88 80 40 86 C8 88 16 36 54 32 C92 28 80 78 42 70`, width * 0.9, 0.9));
+            parts.push(path(`M22 72 C42 52 58 46 80 24`, width * 0.88, 0.88));
+            parts.push(path(`M18 28 C42 44 60 58 88 74`, width * 0.86, 0.86));
+            const extra = Math.round(4 * Math.max(0.9, scale));
+            for (let i = 0; i < extra; i++) {
+                parts.push(path(looseLine(r, i + 3), width * (0.72 + r() * 0.22), 0.72 + r() * 0.18));
+            }
+        }
+
+        return `<span class="scribble-effect scribble-type-${type}"><svg class="scribble-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">${parts.join('')}</svg></span>`;
     }
 
     function ink(seed, style, scaleBase = 1) {
