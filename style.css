@@ -9,7 +9,7 @@
 :root {
     --text-font: 'MyHandwriting', 'Kaiti', 'STKaiti', serif;
     --math-font: 'MathJax_Math', 'Cambria Math', 'Times New Roman', serif;
-    --paper-bg-image: url('./仿真背景图/空白.jpg');
+    --paper-bg-image: none;
     --math-scale: 0.85;
     --ink-color: #1c1c24;
 }
@@ -132,21 +132,22 @@ textarea:focus { outline: none; }
 .char-span { position: relative; display: inline-block; white-space: pre-wrap; transform-origin: center center; }
 
 .scribble-target { display: inline-block; position: relative; }
-.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -4px; right: -4px; top: -0.12em; bottom: -0.12em; mix-blend-mode: multiply; }
+.scribble-effect { position: absolute; pointer-events: none; z-index: 8; left: -7px; right: -7px; top: -0.22em; bottom: -0.2em; mix-blend-mode: multiply; }
 .scribble-stroke {
     position: absolute;
     left: var(--x, 0%);
     top: var(--y, 50%);
     width: var(--w, 100%);
     height: var(--h, 2px);
-    background: rgba(28, 28, 36, var(--a, .78));
+    background: rgba(18, 18, 24, var(--a, .9));
     border-radius: 999px;
-    transform: rotate(var(--r, -2deg));
-    filter: blur(var(--b, .2px));
+    transform: rotate(var(--r, -2deg)) skewX(var(--sk, 0deg));
+    filter: blur(var(--b, .08px));
+    box-shadow: 0 0 var(--shadow, 0px) rgba(18, 18, 24, .55);
 }
-.scribble-type-1 .scribble-stroke:nth-child(n+3) { display: none; }
-.scribble-type-2 .scribble-stroke { height: 1.8px; }
-.scribble-type-3 .scribble-stroke { height: 4px; filter: blur(.45px); }
+.scribble-type-1 .scribble-stroke { min-height: 2px; }
+.scribble-type-2 .scribble-stroke { min-height: 1.7px; }
+.scribble-type-3 .scribble-stroke { min-height: 3px; filter: blur(var(--b, .35px)); }
 
 .ink-blot { position: absolute; display: inline-block; pointer-events: none; z-index: 10; width: 34px; height: 25px; transform-origin: 50% 50%; }
 .ink-core, .ink-dot, .ink-smear {
@@ -172,23 +173,9 @@ textarea:focus { outline: none; }
 .ink-type-3 .ink-core { width: 26px; height: 10px; left: 4px; border-radius: 50% 28% / 55% 70%; filter: blur(1px); }
 
 mjx-container, mjx-math { overflow: visible !important; }
-#staging-area mjx-mi mjx-c,
-#staging-area mjx-mn mjx-c,
-.paper-page mjx-mi mjx-c,
-.paper-page mjx-mn mjx-c {
+#staging-area mjx-container.MathJax *,
+.paper-page mjx-container.MathJax * {
     font-family: var(--math-font) !important;
-}
-#staging-area mjx-stretchy-v *,
-#staging-area mjx-stretchy-h *,
-#staging-area mjx-over *,
-#staging-area mjx-under *,
-#staging-area mjx-mo mjx-c,
-.paper-page mjx-stretchy-v *,
-.paper-page mjx-stretchy-h *,
-.paper-page mjx-over *,
-.paper-page mjx-under *,
-.paper-page mjx-mo mjx-c {
-    font-family: 'MathJax_Main', 'Cambria Math', 'Times New Roman', serif !important;
 }
 #staging-area mjx-container.MathJax,
 .paper-page mjx-container.MathJax {

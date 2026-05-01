@@ -57,7 +57,6 @@
                 { id: 'bm_neucha', name: 'Neucha', url: './fonts/公式字体/Neucha.ttf' },
                 { id: 'bm_shadows', name: 'Shadows Into Light', url: './fonts/公式字体/ShadowsIntoLight-Regular.ttf' },
                 { id: 'bm_virgil', name: 'Virgil', url: './fonts/公式字体/Virgil.woff2' },
-                { id: 'bm_handwritten', name: 'handwritten', url: './fonts/公式字体/handwritten.ttf' },
                 { id: 'bm_snowren', name: 'SNOWREN 建刚体', url: './fonts/公式字体/SNOWREN建刚体.ttf' },
                 { id: 'bm_mobasui', name: '墨八岁简体', url: './fonts/公式字体/墨八岁简体.ttf' },
                 { id: 'bm_daijin', name: '戴锦好字体X', url: './fonts/公式字体/戴锦好字体X.ttf' },

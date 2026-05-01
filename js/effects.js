@@ -2,25 +2,31 @@
     const HW = window.HW = window.HW || {};
     const { hashString, rng } = HW.utils;
 
-    function stroke(seed, index, dense) {
-        const r = rng(hashString(`${seed}:stroke:${index}`));
-        const y = dense ? 16 + r() * 68 : 36 + r() * 30;
-        const x = -6 + r() * 12;
-        const w = 94 + r() * 18;
-        const h = dense ? 1.8 + r() * 3.2 : 1.2 + r() * 1.1;
-        const a = dense ? 0.52 + r() * 0.34 : 0.65 + r() * 0.22;
-        const rot = -8 + r() * 16;
-        const blur = dense ? 0.1 + r() * 0.6 : r() * 0.25;
-        return `<span class="scribble-stroke" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--w:${w.toFixed(1)}%;--h:${h.toFixed(2)}px;--a:${a.toFixed(2)};--r:${rot.toFixed(2)}deg;--b:${blur.toFixed(2)}px"></span>`;
+    function stroke(seed, index, profile) {
+        const r = rng(hashString(`${seed}:stroke:${index}:${profile.type}`));
+        const y = profile.yMin + r() * (profile.yMax - profile.yMin);
+        const x = profile.xMin + r() * (profile.xMax - profile.xMin);
+        const w = profile.wMin + r() * (profile.wMax - profile.wMin);
+        const h = profile.hMin + r() * (profile.hMax - profile.hMin);
+        const a = profile.aMin + r() * (profile.aMax - profile.aMin);
+        const rot = profile.rMin + r() * (profile.rMax - profile.rMin);
+        const blur = profile.bMin + r() * (profile.bMax - profile.bMin);
+        const skew = profile.skMin + r() * (profile.skMax - profile.skMin);
+        const shadow = profile.shadowMin + r() * (profile.shadowMax - profile.shadowMin);
+        return `<span class="scribble-stroke" style="--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--w:${w.toFixed(1)}%;--h:${h.toFixed(2)}px;--a:${a.toFixed(2)};--r:${rot.toFixed(2)}deg;--b:${blur.toFixed(2)}px;--sk:${skew.toFixed(2)}deg;--shadow:${shadow.toFixed(2)}px"></span>`;
     }
 
     function scribble(seed, style, intensity = 1) {
         const type = String(style || '1');
-        const dense = type === '3';
-        const count = type === '1' ? 2 : type === '2' ? 5 : 8;
+        const profiles = {
+            '1': { type: '1', count: 5, yMin: 34, yMax: 64, xMin: -12, xMax: 2, wMin: 102, wMax: 124, hMin: 2.2, hMax: 4.4, aMin: 0.78, aMax: 0.96, rMin: -10, rMax: 10, bMin: 0.02, bMax: 0.22, skMin: -5, skMax: 5, shadowMin: 0, shadowMax: 1.4 },
+            '2': { type: '2', count: 8, yMin: 16, yMax: 78, xMin: -18, xMax: 8, wMin: 84, wMax: 130, hMin: 1.8, hMax: 4.0, aMin: 0.66, aMax: 0.94, rMin: -26, rMax: 26, bMin: 0.02, bMax: 0.36, skMin: -11, skMax: 11, shadowMin: 0, shadowMax: 1.1 },
+            '3': { type: '3', count: 12, yMin: 8, yMax: 88, xMin: -20, xMax: 10, wMin: 92, wMax: 138, hMin: 2.8, hMax: 6.4, aMin: 0.70, aMax: 0.98, rMin: -20, rMax: 20, bMin: 0.10, bMax: 0.58, skMin: -9, skMax: 9, shadowMin: 0.4, shadowMax: 2.0 }
+        };
+        const profile = profiles[type] || profiles['1'];
         const lines = [];
-        const scaled = Math.max(1, Math.round(count * Math.max(0.5, intensity)));
-        for (let i = 0; i < scaled; i++) lines.push(stroke(seed, i, dense));
+        const scaled = Math.max(3, Math.round(profile.count * Math.max(0.75, intensity)));
+        for (let i = 0; i < scaled; i++) lines.push(stroke(seed, i, profile));
         return `<span class="scribble-effect scribble-type-${type}">${lines.join('')}</span>`;
     }
 

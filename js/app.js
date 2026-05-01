@@ -95,7 +95,7 @@
     }
 
     function resetBg() {
-        document.documentElement.style.setProperty('--paper-bg-image', "url('./仿真背景图/空白.jpg')");
+        document.documentElement.style.setProperty('--paper-bg-image', 'none');
         if (el('bgPreview')) el('bgPreview').style.display = 'none';
         if (el('resetBgBtn')) el('resetBgBtn').style.display = 'none';
         saveState();
