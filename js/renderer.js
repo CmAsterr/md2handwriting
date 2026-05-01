@@ -287,11 +287,12 @@
         const options = readRenderOptions();
         document.documentElement.style.setProperty('--math-scale', options.mathSize);
 
+        const stageWidth = HW.config.page.width - options.padLeft - options.padRight;
+        options.inlineMathWidth = stageWidth;
         const source = el('textInput').value || '';
         HW.state.source = source;
         HW.state.renderSeed = hashString(source);
         const parsed = HW.parser.parse(source, options);
-        const stageWidth = HW.config.page.width - options.padLeft - options.padRight;
         const stagingArea = el('staging-area');
         stagingArea.style.width = `${stageWidth}px`;
         stagingArea.style.fontSize = `${options.fontSize}px`;

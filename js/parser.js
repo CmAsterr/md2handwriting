@@ -118,11 +118,19 @@
             .length;
     }
 
-    function alignRelationChain(inner) {
+    function relationWrapThreshold(options) {
+        const width = Number(options.inlineMathWidth) || 680;
+        const fontSize = Number(options.fontSize) || 28;
+        const mathSize = Number(options.mathSize) || 0.85;
+        const approxGlyphWidth = Math.max(7, fontSize * mathSize * 0.45);
+        return Math.max(42, Math.floor(width / approxGlyphWidth));
+    }
+
+    function alignRelationChain(inner, options) {
         if (/\\begin\{|\\\\/.test(inner)) return inner;
         const relations = findTopLevelRelations(inner);
         if (relations.length < 2) return inner;
-        if (relationChainScore(inner) < 54) return inner;
+        if (relationChainScore(inner) <= relationWrapThreshold(options)) return inner;
 
         const parts = [];
         const ops = [];
@@ -159,7 +167,7 @@
             open = '$'; close = '$'; inner = raw.slice(1, -1);
         }
 
-        const aligned = alignRelationChain(inner);
+        const aligned = alignRelationChain(inner, options);
         return aligned === inner ? raw : `${open}${aligned}${close}`;
     }
 
