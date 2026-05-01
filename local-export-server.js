@@ -7,6 +7,10 @@ const { spawn } = require('child_process');
 const EXPORT_PORT = 8765;
 const DEBUG_PORT = 9223;
 const MAX_BODY = 25 * 1024 * 1024;
+const CDP_TIMEOUT = 8 * 60 * 1000;
+const EXPORT_TIMEOUT = 9 * 60 * 1000;
+const CDP_RESULT_CHUNK = 1024 * 1024;
+const SERVICE_VERSION = '10.19';
 
 let browserProcess = null;
 let userDataDir = null;
@@ -125,7 +129,7 @@ function createCdpClient(wsUrl) {
                         pending.delete(callId);
                         reject(new Error(`${method} timeout`));
                     }
-                }, 120000);
+                }, CDP_TIMEOUT);
             });
         },
         waitFor(method, timeout = 30000) {
@@ -198,7 +202,8 @@ async function runExport(payload) {
                         silent: true
                     });
                     const dataUrl = await window.HW.exporter.blobToDataUrl(result.blob);
-                    return { ok: true, dataUrl, extension: result.extension, mime: result.mime };
+                    window.__md2hwExportResult = { dataUrl, extension: result.extension, mime: result.mime };
+                    return { ok: true, length: dataUrl.length, extension: result.extension, mime: result.mime };
                 } catch (error) {
                     return {
                         ok: false,
@@ -217,11 +222,32 @@ async function runExport(payload) {
         if (!value || value.ok === false) {
             throw new Error((value && value.error) || '页面导出未返回有效结果');
         }
-        return value;
+        const chunks = [];
+        const length = Number(value.length || 0);
+        for (let offset = 0; offset < length; offset += CDP_RESULT_CHUNK) {
+            const chunkResult = await cdp.send('Runtime.evaluate', {
+                expression: `window.__md2hwExportResult.dataUrl.slice(${offset}, ${Math.min(offset + CDP_RESULT_CHUNK, length)})`,
+                returnByValue: true
+            });
+            chunks.push((chunkResult.result && chunkResult.result.value) || '');
+        }
+        await cdp.send('Runtime.evaluate', {
+            expression: 'delete window.__md2hwExportResult',
+            returnByValue: true
+        }).catch(() => {});
+        return { ok: true, dataUrl: chunks.join(''), extension: value.extension, mime: value.mime };
     } finally {
         cdp.close();
         if (target.id) requestJson('GET', `/json/close/${target.id}`).catch(() => {});
     }
+}
+
+function withTimeout(promise, ms, message) {
+    let timer;
+    const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(message)), ms);
+    });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 function readBody(req) {
@@ -247,6 +273,7 @@ function cors(res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
 }
 
 const server = http.createServer(async (req, res) => {
@@ -256,9 +283,18 @@ const server = http.createServer(async (req, res) => {
         res.end();
         return;
     }
+    if (req.method === 'GET' && req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({
+            ok: true,
+            service: 'md2handwriting-local-export',
+            version: SERVICE_VERSION
+        }));
+        return;
+    }
     if (req.method === 'GET') {
         res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-        res.end('md2handwriting local export service is running.');
+        res.end(`md2handwriting local export service is running. version=${SERVICE_VERSION}`);
         return;
     }
     if (req.method !== 'POST' || req.url !== '/export') {
@@ -270,7 +306,7 @@ const server = http.createServer(async (req, res) => {
     try {
         const payload = JSON.parse(await readBody(req));
         if (!payload.url || !payload.options) throw new Error('缺少导出参数。');
-        const result = await runExport(payload);
+        const result = await withTimeout(runExport(payload), EXPORT_TIMEOUT, '本地导出超时，请重启 local-export-server.js 后重试。');
         const base64 = result.dataUrl.split(',')[1];
         const buffer = Buffer.from(base64, 'base64');
         res.writeHead(200, {
