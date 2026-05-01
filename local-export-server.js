@@ -9,7 +9,8 @@ const DEBUG_PORT = 9223;
 const MAX_BODY = 25 * 1024 * 1024;
 const CDP_TIMEOUT = 8 * 60 * 1000;
 const EXPORT_TIMEOUT = 9 * 60 * 1000;
-const SERVICE_VERSION = '10.18';
+const CDP_RESULT_CHUNK = 1024 * 1024;
+const SERVICE_VERSION = '10.19';
 
 let browserProcess = null;
 let userDataDir = null;
@@ -201,7 +202,8 @@ async function runExport(payload) {
                         silent: true
                     });
                     const dataUrl = await window.HW.exporter.blobToDataUrl(result.blob);
-                    return { ok: true, dataUrl, extension: result.extension, mime: result.mime };
+                    window.__md2hwExportResult = { dataUrl, extension: result.extension, mime: result.mime };
+                    return { ok: true, length: dataUrl.length, extension: result.extension, mime: result.mime };
                 } catch (error) {
                     return {
                         ok: false,
@@ -220,7 +222,20 @@ async function runExport(payload) {
         if (!value || value.ok === false) {
             throw new Error((value && value.error) || '页面导出未返回有效结果');
         }
-        return value;
+        const chunks = [];
+        const length = Number(value.length || 0);
+        for (let offset = 0; offset < length; offset += CDP_RESULT_CHUNK) {
+            const chunkResult = await cdp.send('Runtime.evaluate', {
+                expression: `window.__md2hwExportResult.dataUrl.slice(${offset}, ${Math.min(offset + CDP_RESULT_CHUNK, length)})`,
+                returnByValue: true
+            });
+            chunks.push((chunkResult.result && chunkResult.result.value) || '');
+        }
+        await cdp.send('Runtime.evaluate', {
+            expression: 'delete window.__md2hwExportResult',
+            returnByValue: true
+        }).catch(() => {});
+        return { ok: true, dataUrl: chunks.join(''), extension: value.extension, mime: value.mime };
     } finally {
         cdp.close();
         if (target.id) requestJson('GET', `/json/close/${target.id}`).catch(() => {});

@@ -2,10 +2,8 @@
     const HW = window.HW = window.HW || {};
     const { el, setProgress, showProgress, hideProgress, yieldToBrowser, dataUrlToBlob, loadImage, canvasToBlob, blobToDataUrl, safeFilename } = HW.utils;
     const LOCAL_EXPORT_TIMEOUT = 8 * 60 * 1000;
-    const LONG_IMAGE_SCALE = 3;
-    const LONG_IMAGE_QUALITY = 0.98;
-    const EXPORT_FONT_STYLE_ID = 'export-font-face-overrides';
-    const exportFontCache = new Map();
+    const LONG_IMAGE_SCALE = 2.25;
+    const LONG_IMAGE_QUALITY = 0.95;
 
     function setAbortController(controller) {
         HW.state.exportAbortController = controller || null;
@@ -39,59 +37,24 @@
         return Array.from(document.querySelectorAll('.paper-page'));
     }
 
-    function getSelectedFont(type) {
-        const id = HW.state && HW.state[`${type}Font`];
-        if (!id || id === 'default') return null;
-        const list = HW.config && HW.config.fonts && HW.config.fonts[type];
-        return Array.isArray(list) ? list.find(font => font.id === id) || null : null;
-    }
-
-    async function blobToDataURL(blob) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    }
-
-    async function getExportFontSource(font) {
-        if (!font || !font.url) return null;
-        if (exportFontCache.has(font.id)) return exportFontCache.get(font.id);
-        const url = new URL(font.url, document.baseURI).href;
-        const response = await fetch(url, { cache: 'force-cache' });
-        if (!response.ok) throw new Error(`Font load failed: ${font.name || font.id}`);
-        const dataUrl = await blobToDataURL(await response.blob());
-        exportFontCache.set(font.id, dataUrl);
-        return dataUrl;
-    }
-
     async function prepareExportFonts() {
-        const selectedFonts = [getSelectedFont('text'), getSelectedFont('math')].filter(Boolean);
+        const selectedFontIds = new Set(['text', 'math']
+            .map(type => HW.state && HW.state[`${type}Font`])
+            .filter(id => id && id !== 'default'));
         const builtinStyles = Array.from(document.querySelectorAll('style[id^="font-face-"]'));
         const disabledStates = builtinStyles.map(style => [style, style.disabled]);
 
-        if (!selectedFonts.length) return () => {};
-
-        const rules = [];
-        for (const font of selectedFonts) {
-            const source = await getExportFontSource(font);
-            if (source) rules.push(`@font-face { font-family: '${font.id}'; src: url('${source}'); font-display: block; }`);
-        }
-
-        builtinStyles.forEach(style => { style.disabled = true; });
-        const styleEl = document.createElement('style');
-        styleEl.id = EXPORT_FONT_STYLE_ID;
-        styleEl.textContent = rules.join('\n');
-        document.head.appendChild(styleEl);
+        builtinStyles.forEach(style => {
+            const fontId = style.id.replace(/^font-face-/, '');
+            style.disabled = !selectedFontIds.has(fontId);
+        });
 
         if (document.fonts && document.fonts.load) {
-            await Promise.all(selectedFonts.map(font => document.fonts.load(`16px "${font.id}"`).catch(() => null)));
+            await Promise.all(Array.from(selectedFontIds).map(id => document.fonts.load(`16px "${id}"`).catch(() => null)));
         }
         if (document.fonts && document.fonts.ready) await document.fonts.ready;
 
         return () => {
-            styleEl.remove();
             disabledStates.forEach(([style, disabled]) => { style.disabled = disabled; });
         };
     }
@@ -243,10 +206,11 @@
             for (let i = 0; i < segmentPages.length; i++) {
                 ensureNotCanceled();
                 done++;
-                if (onProgress) onProgress(`正在渲染分段长图: 第 ${groupIndex + 1} 段 (${i + 1}/${segmentPages.length})`, (done / pages.length) * 75);
-                pageImages.push({ dataUrl: await capturePage(segmentPages[i], LONG_IMAGE_SCALE, LONG_IMAGE_QUALITY, 'png') });
+                if (onProgress) onProgress(`正在渲染分段长图: 第 ${groupIndex + 1} 段 (${i + 1}/${segmentPages.length})`, (done / pages.length) * 72);
+                pageImages.push({ dataUrl: await capturePage(segmentPages[i], LONG_IMAGE_SCALE, LONG_IMAGE_QUALITY, 'jpeg') });
                 await yieldToBrowser();
             }
+            if (onProgress) onProgress(`正在拼接第 ${groupIndex + 1}/${groups.length} 段长图...`, 72 + (groupIndex / groups.length) * 12);
             const dataUrl = await combineImagesVertically(pageImages);
             output.push({ name: `${filename}_第${groupIndex + 1}段.jpg`, dataUrl });
             if (onProgress) onProgress(`已拼接第 ${groupIndex + 1}/${groups.length} 段长图`, 75 + ((groupIndex + 1) / groups.length) * 14);
