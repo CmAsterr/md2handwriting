@@ -1,74 +1,40 @@
-# md2handwriting
+# 手写工坊 · GitHub Pages 在线版
 
-把 Markdown / LaTeX 作业内容渲染成接近真实纸面手写效果的静态网页工具。
+在线使用：<https://cmasterr.github.io/md2handwriting/>
 
-## 功能
+基于本地版 2.2.2 的独立浏览器版。字体笔画在 Web Worker 中生成，文稿、导入字体和导出记录保存在当前浏览器的 IndexedDB，无需启动 Node 服务。
 
-- Markdown 输入，A4 手写纸预览。
-- 内置多种中文手写字体和公式字体，支持继续导入本地字体。
-- 支持常见 LaTeX：`\vec{a}`、`\overline{a}`、`\hat{x}`、`\tilde{x}`、`|a|`、希腊字母、矩阵、cases、aligned 等。
-- `~~...~~` 渲染为涂改痕迹，`[ink]` 渲染为漏墨。
-- `\textcolor{red}{...}` 可做红笔修正。
-- 导出 PDF、逐页图片 ZIP、按 `---` 分段的长图 ZIP。
-- 可选本地导出服务，适合大作业或浏览器后台标签页导出。
+## 使用
 
-## 本地运行
+- 输入或打开 Markdown，也可以导入本地版保存的源稿 JSON。
+- 选择正文/公式字体、笔宽、自然度、纸张和光影；支持照片背景导入与裁剪、自定义毫米纸张。
+- “自由编辑”中拖动内容块；四角自由拉伸，Shift 等比；文字左右中点重新换行，公式左右中点保持结构并按框宽适配。支持旋转、组合、锁定、撤销重做。
+- 导出 PDF、逐页 JPG ZIP 或按 `---` 分段的长图 ZIP，完成后在“导出记录”下载。
+- 建议使用新版 Edge 或 Chrome。
 
-双击 `一键启动.bat`，或在本目录运行：
+## 浏览器版的保存与导出
 
-```powershell
-python -m http.server 8000
+导出时保持页面打开。切换到后台可能被浏览器限速或暂停；关闭、刷新、休眠不会继续计算。重新打开同一浏览器后，可以从“导出记录”手动继续，复用已经生成的页面。
+
+文稿与导入字体仅保存在当前浏览器，不会自动同步到其他电脑。请使用“保存源稿”和下载按钮保留文件；清除网站数据、隐私模式结束或浏览器清理存储可能删除本地记录。多个浏览器的记录相互独立。
+
+超长文稿建议分段导出。长图达到像素上限时自动拆分；导出超过浏览器版的内存保护上限会提示降低清晰度或分段，不继续占满内存。网页预览最多显示前 12 页，导出仍处理全文。
+
+网络图片要求图片服务器允许跨域读取；无法读取时会显示提示，可使用“插入图片”导入本地文件。本地版源稿若引用 `/assets/…`，应重新导入这些图片；已经内嵌在源稿中的背景图片可直接使用。
+
+## 发布与维护
+
+本分支是 `gh-pages`，直接发布仓库根目录，`.nojekyll` 防止 Jekyll 改写静态资源。默认资源前缀为 `/md2handwriting/`。`main` 及原本地程序独立保留。
+
+已包含构建后的笔迹 Worker、Markdown/MathJax/PDF/ZIP 库、字体样张和字体资源，不需要在 Pages 上运行服务器。字体按需下载，并不会在打开页面时下载全部字体。
+
+修改笔迹 Worker 或字体资源后重新生成：
+
+```sh
+npm ci
+npm run build
 ```
 
-然后打开：
+本机已有 Edge/Chrome 时运行 `npm test`；其他环境可设置 `CHROME_PATH`。测试启用独立的纯静态 HTTP 服务，不需要本地版后台，检查字体预览、文字换行、三种导出、背景一致性、字体导入恢复和 12 页任务恢复。
 
-```text
-http://localhost:8000/
-```
-
-如果要使用“本地加速导出”，另开一个终端运行：
-
-```powershell
-node local-export-server.js
-```
-
-本地服务会调用已安装的 Chrome 或 Edge 进行后台渲染，不需要额外 npm 依赖。
-
-## 输入约定
-
-- 普通文本直接输入。
-- 行内公式使用 `$...$`。
-- 独立公式使用 `$$...$$`、`\[...\]` 或 LaTeX 环境。
-- 单独一行 `---` 表示主动分页；导出“分段长图 ZIP”时，它也是长图分段边界。
-- 涂改写法：`$x = $~~$5$~~$3$`。
-- 漏墨写法：`因此结论成立。[ink]`
-- 红笔写法：`\textcolor{red}{这里应改为 $x=2$}`。
-
-## 导出说明
-
-- `PDF 文档`：每张 A4 纸导出为一页 PDF。
-- `ZIP 图片压缩包`：每张 A4 纸导出为一张 JPG。
-- `按 --- 分段长图 ZIP`：把每两个 `---` 之间产生的页面纵向拼为一张长图。
-- 勾选“本地加速导出”时，网页会请求 `http://127.0.0.1:8765/export`。如果服务不可用，会自动回退到浏览器内导出。
-
-## Skill 和提示词
-
-- 可迁移 skill 在 `skills/md2handwriting-homework/`。
-- 通用提示词模板在 `prompts/homework-md2handwriting.md`。
-- skill 内也保存了一份可供其他 AI 读取的提示词：`skills/md2handwriting-homework/references/homework-md2handwriting-prompt.md`。
-- 本机 Codex 已安装同名 skill：`md2handwriting-homework`。
-
-## 项目结构
-
-```text
-index.html              页面结构
-style.css               样式、纸张、MathJax 字体策略、涂改/漏墨视觉
-js/config.js            全局配置和内置字体列表
-js/parser.js            Markdown / LaTeX / 特殊标记解析
-js/renderer.js          排版、MathJax 渲染、分页
-js/exporter.js          PDF / ZIP / 长图导出
-js/fonts.js             内置字体和导入字体
-js/effects.js           涂改与漏墨生成
-js/app.js               初始化、状态保存、UI 事件
-local-export-server.js  可选本地后台导出服务
-```
+渲染继续采用本地字体和连续笔画处理，不接入 Inko。第三方库说明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。

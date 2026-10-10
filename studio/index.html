@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>手写工坊 · 在线版</title><link rel="stylesheet" href="/md2handwriting/studio/style.css"><link rel="stylesheet" href="/md2handwriting/studio/ui.css">
+<script defer src="/md2handwriting/studio/pages-runtime.js"></script><script defer src="/md2handwriting/vendor/jspdf.umd.min.js"></script><script defer src="/md2handwriting/vendor/jszip.min.js"></script><script defer src="/md2handwriting/studio/pages-export.js"></script><script src="/md2handwriting/studio/math-config.js"></script><script defer src="/md2handwriting/vendor/mathjax/tex-svg-full.js"></script>
+<script defer src="/md2handwriting/studio/paper-crop.js"></script>
+<script defer src="/md2handwriting/vendor/marked.js"></script><script defer src="/md2handwriting/studio/core.js"></script><script defer src="/md2handwriting/studio/block-model.js"></script><script defer src="/md2handwriting/studio/pen-geometry.js"></script><script defer src="/md2handwriting/studio/pen-gestures.js"></script><script defer src="/md2handwriting/studio/large-symbols.js"></script><script defer src="/md2handwriting/studio/pen-fonts.js"></script><script defer src="/md2handwriting/studio/pen-ink.js"></script><script defer src="/md2handwriting/studio/effects.js"></script><script defer src="/md2handwriting/studio/layout.js"></script><script defer src="/md2handwriting/studio/font-picker.js"></script><script defer src="/md2handwriting/studio/controls.js"></script><script defer src="/md2handwriting/studio/columns.js"></script><script defer src="/md2handwriting/studio/preview.js"></script><script defer src="/md2handwriting/studio/raster.js"></script><script defer src="/md2handwriting/studio/block-editor.js"></script><script defer src="/md2handwriting/studio/app.js"></script>
+</head><body>
+<header class="topbar"><div class="brand"><span class="brand-icon">手</span><strong>手写工坊 <small>WEB</small></strong></div><span id="save-status" role="status">正在载入</span><div class="top-actions"><button id="import-button">打开 Markdown</button><input type="file" id="import-file" accept=".md,.txt,.json" hidden><button id="save-source">保存源稿</button><button id="jobs-toggle">导出记录 <span id="job-count">0</span></button><button class="primary" id="export-button">导出文件</button></div></header>
+<main>
+<aside class="settings">
+  <div class="section-heading">纸面与笔迹 <span>即时预览</span></div>
+  <div class="font-field"><span class="font-field-label">正文字体</span><select id="font" data-setting aria-label="正文字体"></select></div>
+  <label class="upload-label">导入正文字体<input id="font-file" type="file" accept=".ttf,.otf,.woff,.woff2" hidden></label>
+  <div class="font-field"><span class="font-field-label">公式字形</span><select id="mathFont" data-setting aria-label="公式字形"><option value="">标准数学字形</option></select></div>
+  <label class="upload-label">导入公式字体<input id="math-font-file" type="file" accept=".ttf,.otf,.woff,.woff2" hidden></label>
+  <p class="hint">公式字体只替换字母与数字。分数线、矩阵和大括号保留完整结构。</p>
+  <label>书写自然度 <output for="naturalness"></output><input id="naturalness" data-setting type="range" min="0" max="100" value="35"></label>
+  <label>圆珠笔粗细 <output for="penWidth"></output><input id="penWidth" data-setting type="range" min="0.4" max="2" step="0.05" value="1"></label>
+  <label>墨色深浅 <output for="pressure"></output><input id="pressure" data-setting type="range" min="0" max="100" value="30"></label>
+  <p class="hint">先以同一笔宽绘制正文、公式和表格，再加入笔势扰动。自然度不再改变粗细，墨色只控制深浅。</p>
+  <button id="new-seed" class="subtle">换一份笔迹</button>
+  <details open><summary>字号与间距</summary>
+    <label>正文字号 <output for="fontSize"></output><input id="fontSize" data-setting type="range" min="16" max="52" value="27"></label>
+    <label>公式比例 <output for="mathSize"></output><input id="mathSize" data-setting type="range" min="0.6" max="1.5" step="0.02" value="0.92"></label>
+    <label>行距 <output for="lineHeight"></output><input id="lineHeight" data-setting type="range" min="1.2" max="2.6" step="0.05" value="1.65"></label>
+    <label>左右留白 <output for="marginX"></output><input id="marginX" data-setting type="range" min="20" max="150" value="62"></label>
+    <label>上下留白 <output for="marginY"></output><input id="marginY" data-setting type="range" min="20" max="180" value="65"></label>
+  </details>
+  <details><summary>涂改与漏墨</summary>
+    <label>涂改笔势<select id="scribble" data-setting><option value="mixed">自然混合</option><option value="strike">随手划线</option><option value="loop">连续圈划</option><option value="cross">交叉划除</option><option value="dense">反复覆盖</option></select></label>
+    <label>漏墨痕迹<select id="ink" data-setting><option value="mixed">自然混合</option><option value="drop">积墨洇边</option><option value="splash">细碎飞溅</option><option value="drag">蹭墨拖痕</option><option value="dry">干笔断墨</option></select></label>
+    <p class="hint"><code>~~写错的内容~~</code> 添加涂改，<code>[ink]</code> 添加漏墨。位置不变时效果保持稳定。</p>
+  </details>
+  <details open><summary>纸张与拍摄光影</summary>
+    <label>纸张尺寸<select id="page-format"><option value="a4">A4 · 210 × 297 mm</option><option value="a5">A5 · 148 × 210 mm</option><option value="a3">A3 · 297 × 420 mm</option><option value="b5">B5 · 176 × 250 mm</option><option value="letter">Letter · 215.9 × 279.4 mm</option><option value="custom">自定义尺寸</option></select></label>
+    <div class="page-dimensions"><label for="page-width">宽（mm）<input id="page-width" type="number" min="50" max="420" step="0.1" value="210" required></label><button type="button" id="page-rotate" aria-label="交换纸张宽高" title="交换宽高，切换横版与竖版">⇄</button><label for="page-height">高（mm）<input id="page-height" type="number" min="50" max="420" step="0.1" value="297" required></label></div>
+    <p class="hint" id="page-size-note">宽高支持 50–420 mm，内容按纸张尺寸重新排版。</p>
+    <label>纸张<select id="paper" data-setting><option value="plain">空白纸</option><option value="ruled">横线纸</option><option value="grid">方格纸</option><option value="photo-plain">真实空白纸</option><option value="photo-ruled">真实横线纸</option><option value="custom">图片背景</option></select></label>
+    <label>呈现方式<select id="scene" data-setting><option value="scan">清晰扫描</option><option value="desk">桌面自然光</option><option value="side">窗边侧光</option></select></label>
+    <label>光影强度 <output for="light"></output><input id="light" data-setting type="range" min="0" max="100" value="35"></label>
+    <label>纸张纹理 <output for="texture"></output><input id="texture" data-setting type="range" min="0" max="100" value="25"></label>
+    <div class="paper-presets"><button type="button" data-paper-photo="空白.jpg" data-paper-type="photo-plain">真实空白纸</button><button type="button" data-paper-photo="横线.jpg" data-paper-type="photo-ruled">真实横线纸</button></div>
+    <div class="background-actions"><button type="button" id="import-background">导入并裁剪</button><button type="button" id="recrop-background" hidden>重新裁剪</button></div>
+    <input type="file" id="background-file" accept="image/png,image/jpeg,image/webp" hidden>
+    <button class="subtle" id="clear-background">移除图片背景</button>
+    <p class="hint">背景裁剪跟随纸张比例，预览与导出使用同一张图。更改比例后，背景会居中铺满，可重新裁剪调整。切换纸张会保留上传图。真实照片自带光影，选择“清晰扫描”可保留原貌。</p>
+  </details>
+  <details><summary>表格与图片</summary><label>表格边线<select id="tableStyle" data-setting><option value="hand">手绘线条</option><option value="ruled">规整描线</option><option value="minimal">三线表</option></select></label><label class="upload-label">插入图片<input type="file" id="content-image" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label><p class="hint">所有边线使用统一笔宽并保留手绘变化，“规整描线”的弯曲较小。表格按行跨页，自动重复表头。网络图片缓存到本机；本地图片用上方按钮导入。</p></details>
+  <details><summary>输入说明</summary><p class="hint">支持标题、嵌套列表、任务列表、引用、表格、代码、图片和脚注。用 <code>$…$</code> 写行内公式，<code>$$…$$</code> 写独立公式，支持 aligned、cases、矩阵。单独一行 <code>---</code> 主动分页并分段。链接保留文字，代码保留缩进。</p><button id="load-example" class="subtle">载入排版示例</button></details>
+</aside>
+<section class="editor-pane"><div class="pane-heading"><strong>Markdown</strong><span id="character-count"></span></div><textarea id="source" aria-label="Markdown 源稿" spellcheck="false" placeholder="在这里写下正文与公式…"></textarea><div class="editor-footer"><span>源稿自动保存到此浏览器</span><span>Ctrl + Enter 更新</span></div></section>
+<section class="preview-pane"><div class="pane-heading"><strong>纸面预览</strong><span id="layout-status" role="status">准备排版</span><button id="refresh">更新预览</button></div>
+<div class="preview-toolbar" role="group" aria-label="预览缩放">
+  <button id="zoom-out" class="zoom-button" aria-label="缩小预览" title="缩小预览"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10h12"/></svg></button>
+  <select id="preview-zoom" aria-label="预览缩放比例"><option value="fit-width">适应宽度</option><option value="fit-page">整页</option><option value="0.25">25%</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.25">125%</option><option value="1.5">150%</option><option value="2">200%</option><option value="3">300%</option></select>
+  <button id="zoom-in" class="zoom-button" aria-label="放大预览" title="放大预览"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 10h12M10 4v12"/></svg></button>
+  <button id="zoom-fit" title="恢复适应宽度">适应</button><button id="edit-layout" aria-pressed="false" title="移动、缩放和旋转纸面内容">自由编辑</button><span class="zoom-help">Ctrl + 滚轮缩放 · 拖动纸面</span>
+</div>
+<div id="block-tools" hidden aria-label="内容块编辑工具">
+  <div class="block-tool-row"><select id="block-select" aria-label="选择内容块"><option value="">选择内容块</option></select><span id="block-count">点击内容，或拖出框选</span><label class="block-snap-label"><input id="block-snap" type="checkbox" checked>吸附</label></div>
+  <div class="block-tool-row"><button id="block-undo" title="Ctrl+Z">撤销</button><button id="block-redo" title="Ctrl+Y">重做</button><button id="block-group">组合</button><button id="block-ungroup">拆组</button><button id="block-lock">锁定</button><button id="block-align-left">左对齐</button><button id="block-align-center">居中对齐</button><button id="block-reset">重置所选</button><button id="block-reset-all">全部恢复</button><button id="block-clear-missing">清除失效</button></div>
+  <details class="block-properties"><summary>精确调整 <span>左右换行/公式适配 · 四角拉伸 · Shift 等比 · 顶部旋转</span></summary><div><label>X / mm<input id="block-x" type="number" min="-1000" max="1000" step="0.01" required></label><label>Y / mm<input id="block-y" type="number" min="-1000" max="1000" step="0.01" required></label><label>等比 / %<input id="block-scale" type="number" min="25" max="400" step="0.01" required></label><label>横向 / %<input id="block-stretch-x" type="number" min="25" max="400" step="0.01" required></label><label>纵向 / %<input id="block-stretch-y" type="number" min="25" max="400" step="0.01" required></label><label>旋转 / °<input id="block-angle" type="number" min="-180" max="180" step="0.01" required></label><label title="文字重新换行，完整公式等比适配；其他内容块位置不动">排版宽 / mm<input id="block-width" type="number" min="20" max="840" step="0.01" required></label></div></details>
+</div>
+<div id="warnings" role="status" hidden></div><div class="preview-scroll" tabindex="0" aria-label="纸面预览，可滚动查看，Ctrl 加滚轮缩放"><div id="paper-wrap"><div id="paper-host"></div></div><div id="empty-state" hidden>开始输入，生成你的第一张手写纸。</div></div><nav class="page-nav" aria-label="预览翻页"><button id="prev-page" aria-label="上一页">←</button><span id="page-label">0 / 0</span><button id="next-page" aria-label="下一页">→</button><span class="hint" id="preview-note">A4 · 当前页预览</span></nav></section>
+</main>
+<aside id="jobs-panel" class="jobs-panel" hidden><div class="pane-heading"><strong>导出记录</strong><button id="jobs-close" aria-label="关闭导出记录">×</button></div><p class="job-intro">导出在此浏览器内进行，请保持页面打开。关闭或刷新会停止任务；重新打开后可手动继续，已生成的页面会保留。</p><div id="jobs-list"></div></aside>
+<dialog id="paper-crop-dialog" aria-labelledby="crop-title" aria-describedby="crop-help">
+  <div class="dialog-heading"><div><h2 id="crop-title">裁剪纸张背景</h2><p id="crop-help">拖动图片调整位置，滚轮或滑杆缩放。</p></div><button type="button" id="crop-close" aria-label="关闭裁剪">×</button></div>
+  <div class="crop-stage"><canvas id="crop-canvas" width="800" height="1131" tabindex="0" aria-label="裁剪预览，方向键移动图片，加减键缩放"></canvas><span class="crop-ratio" aria-hidden="true"></span></div>
+  <div class="crop-tools"><label for="crop-zoom">缩放 <output id="crop-zoom-value" for="crop-zoom">100%</output></label><input id="crop-zoom" type="range" min="100" max="400" value="100" aria-label="裁剪缩放"><button type="button" id="crop-reset">居中重置</button></div>
+  <p class="crop-note">框内区域将铺满纸面。保留导入图，可随时重新裁剪。</p>
+  <div class="crop-actions"><button type="button" id="crop-cancel">取消</button><button type="button" id="crop-apply" class="primary">使用此裁剪</button></div>
+</dialog>
+<dialog id="export-dialog"><form id="export-form"><div class="dialog-heading"><h2>导出手写稿</h2><button type="button" id="export-close" aria-label="关闭">×</button></div><label>文件名<input id="filename" value="手写作业" required maxlength="80"></label><label>格式<select id="format"><option value="pdf">PDF 文档</option><option value="zip">逐页 JPG · ZIP</option><option value="longzip">按 --- 分段长图 · ZIP</option></select></label><label>清晰度<select id="quality"><option value="1">快速 · 800 像素宽</option><option value="2" selected>清晰 · 1600 像素宽</option><option value="3">精细 · 2400 像素宽</option></select></label><p class="hint">导出时请保持页面打开，切到后台可能变慢或暂停。关闭后可从导出记录继续。文稿、导入字体和导出文件保存在此浏览器，请及时下载备份；清理浏览器数据会删除它们。</p><button class="primary" type="submit" id="submit-export">开始导出</button></form></dialog>
+<div id="toast" role="status" hidden></div><div id="layout-stage" class="paper-content" aria-hidden="true"></div>
+</body></html>

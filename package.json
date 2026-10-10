@@ -1,0 +1,22 @@
+{
+  "name": "md2handwriting-pages",
+  "version": "2.2.2-web.1",
+  "private": true,
+  "description": "Browser-only GitHub Pages edition",
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "fontkit": "2.0.4",
+    "buffer": "^6.0.3",
+    "sharp": "0.35.5",
+    "mathjax-full": "3.2.2",
+    "marked": "15.0.12",
+    "playwright-core": "1.56.1"
+  },
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node scripts/test-pages.cjs"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.9.12"
+  }
+}
