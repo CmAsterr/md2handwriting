@@ -101,9 +101,15 @@ window.PenInk = (() => {
             // above receives the common compact-glyph model.
             for(const path of span.querySelectorAll('path:not([data-hand-model])')){
                 if(!path.getAttribute('d'))continue;
+                if(path.dataset.inkFallback==='font'){
+                    // Newly supplied SVG text did not consume the legacy formula
+                    // random stream. Keep every following selected-font glyph stable.
+                    warp([path],settings,StudioCore.random(`${settings.seed}:fallback-text:${key}:${index}:${path.dataset.inkChar}`),'glyph',{gain:.48,limitX:.85,limitY:.85});continue;
+                }
                 if(path.closest('[data-mml-node="mi"],[data-mml-node="mn"]')&&!path.dataset.inkFill){
                     const variant=Math.floor(r()*8);path.dataset.handVariant=String(variant);
-                    warp([path],settings,r,'glyph',{factory:b=>PenGestures.glyph(b,settings,r,variant)});
+                    const amount=PenVariants.amount(settings),code=Number.parseInt(path.dataset.c||'',16),ch=path.dataset.handChar||(Number.isFinite(code)?String.fromCodePoint(code).normalize('NFKC'):'math');
+                    warp([path],settings,r,'glyph',{factory:b=>settings.glyphStyle==='expressive'&&amount&&b.width>.1&&b.height>.1?PenVariants.warp(b,{seed:settings.seed,ch,slot:variant,amount,style:'expressive',kind:'math'}):PenGestures.glyph(b,settings,r,variant)});
                 }else warp([path],settings,r,'glyph',{gain:.48,fast:!path.dataset.inkFill,limitX:.85,limitY:.85});
             }
         }

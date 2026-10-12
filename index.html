@@ -1,20 +1,26 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>手写工坊 · 在线版</title><link rel="stylesheet" href="/md2handwriting/studio/style.css"><link rel="stylesheet" href="/md2handwriting/studio/ui.css">
-<script defer src="/md2handwriting/studio/pages-runtime.js"></script><script defer src="/md2handwriting/vendor/jspdf.umd.min.js"></script><script defer src="/md2handwriting/vendor/jszip.min.js"></script><script defer src="/md2handwriting/studio/pages-export.js"></script><script src="/md2handwriting/studio/math-config.js"></script><script defer src="/md2handwriting/vendor/mathjax/tex-svg-full.js"></script>
-<script defer src="/md2handwriting/studio/paper-crop.js"></script>
-<script defer src="/md2handwriting/vendor/marked.js"></script><script defer src="/md2handwriting/studio/core.js"></script><script defer src="/md2handwriting/studio/block-model.js"></script><script defer src="/md2handwriting/studio/pen-geometry.js"></script><script defer src="/md2handwriting/studio/pen-gestures.js"></script><script defer src="/md2handwriting/studio/large-symbols.js"></script><script defer src="/md2handwriting/studio/pen-fonts.js"></script><script defer src="/md2handwriting/studio/pen-ink.js"></script><script defer src="/md2handwriting/studio/effects.js"></script><script defer src="/md2handwriting/studio/layout.js"></script><script defer src="/md2handwriting/studio/font-picker.js"></script><script defer src="/md2handwriting/studio/controls.js"></script><script defer src="/md2handwriting/studio/columns.js"></script><script defer src="/md2handwriting/studio/preview.js"></script><script defer src="/md2handwriting/studio/raster.js"></script><script defer src="/md2handwriting/studio/block-editor.js"></script><script defer src="/md2handwriting/studio/app.js"></script>
+<title>手写工坊 · 在线版 2.7.1</title><link rel="stylesheet" href="/md2handwriting/studio/style.css?v=2.7.1-web.1"><link rel="stylesheet" href="/md2handwriting/studio/ui.css?v=2.7.1-web.1">
+<link rel="stylesheet" href="/md2handwriting/studio/font-import.css?v=2.7.1-web.1"><script defer src="/md2handwriting/studio/font-import.js?v=2.7.1-web.1"></script>
+<script defer src="/md2handwriting/studio/pages-runtime.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/vendor/jspdf.umd.min.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/vendor/jszip.min.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pages-export.js?v=2.7.1-web.1"></script><script src="/md2handwriting/studio/math-config.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/vendor/mathjax/tex-svg-full.js?v=2.7.1-web.1"></script>
+<script defer src="/md2handwriting/studio/paper-crop.js?v=2.7.1-web.1"></script>
+<script defer src="/md2handwriting/vendor/marked.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/core.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/block-model.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pen-geometry.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pen-variants.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/fallback-ink.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/set-symbols.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pen-gestures.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/large-symbols.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pen-fonts.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/pen-ink.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/effects.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/layout.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/font-picker.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/controls.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/columns.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/preview.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/raster.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/block-editor.js?v=2.7.1-web.1"></script><script defer src="/md2handwriting/studio/app.js?v=2.7.1-web.1"></script>
 </head><body>
-<header class="topbar"><div class="brand"><span class="brand-icon">手</span><strong>手写工坊 <small>WEB</small></strong></div><span id="save-status" role="status">正在载入</span><div class="top-actions"><button id="import-button">打开 Markdown</button><input type="file" id="import-file" accept=".md,.txt,.json" hidden><button id="save-source">保存源稿</button><button id="jobs-toggle">导出记录 <span id="job-count">0</span></button><button class="primary" id="export-button">导出文件</button></div></header>
+<header class="topbar"><div class="brand"><span class="brand-icon">手</span><strong>手写工坊 <small>WEB 2.7.1</small></strong></div><span id="save-status" role="status">正在载入</span><div class="top-actions"><button id="import-button">打开 Markdown</button><input type="file" id="import-file" accept=".md,.txt,.json" hidden><button id="save-source">保存源稿</button><button id="jobs-toggle">导出记录 <span id="job-count">0</span></button><button class="primary" id="export-button">导出文件</button></div></header>
 <main>
 <aside class="settings">
   <div class="section-heading">纸面与笔迹 <span>即时预览</span></div>
-  <div class="font-field"><span class="font-field-label">正文字体</span><select id="font" data-setting aria-label="正文字体"></select></div>
-  <label class="upload-label">导入正文字体<input id="font-file" type="file" accept=".ttf,.otf,.woff,.woff2" hidden></label>
-  <div class="font-field"><span class="font-field-label">公式字形</span><select id="mathFont" data-setting aria-label="公式字形"><option value="">标准数学字形</option></select></div>
-  <label class="upload-label">导入公式字体<input id="math-font-file" type="file" accept=".ttf,.otf,.woff,.woff2" hidden></label>
+  <div class="font-field"><div class="font-field-heading"><span class="font-field-label">正文字体</span><button type="button" class="font-import-trigger" data-import-font="text" aria-label="批量导入正文字体" aria-haspopup="dialog"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 11V2M5 5l3-3 3 3M2 10v4h12v-4"/></svg><span>导入</span></button></div><select id="font" data-setting aria-label="正文字体"></select></div>
+  <input id="font-file" type="file" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
+  <div class="font-field"><div class="font-field-heading"><span class="font-field-label">公式字形</span><button type="button" class="font-import-trigger" data-import-font="math" aria-label="批量导入公式字体" aria-haspopup="dialog"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 11V2M5 5l3-3 3 3M2 10v4h12v-4"/></svg><span>导入</span></button></div><select id="mathFont" data-setting aria-label="公式字形"><option value="">标准数学字形</option></select></div>
+  <input id="math-font-file" type="file" accept=".ttf,.otf,.woff,.woff2" multiple hidden>
   <p class="hint">公式字体只替换字母与数字。分数线、矩阵和大括号保留完整结构。</p>
+  <label>缺字与默认字形<select id="fallbackStyle" data-setting><option value="hand">手写补充 · 保留已有字形</option><option value="original">沿用原处理</option></select></label>
+  <p class="hint" id="fallback-status">只处理缺字和默认符号，保留所选字体已有字形。</p>
   <label>书写自然度 <output for="naturalness"></output><input id="naturalness" data-setting type="range" min="0" max="100" value="35"></label>
+  <label>同字变化方式<select id="glyphStyle" data-setting><option value="subtle">温和 · 细微结构</option><option value="expressive">激进 · 部件比例与弧度</option></select></label>
+  <label>同字差异强度 <output for="glyphVariation"></output><input id="glyphVariation" data-setting type="range" min="0" max="100" step="5" value="55"></label>
+  <p class="hint">激进模式明显改变左右、上下比例与弧度；英文和公式字母会限制幅度，保持字距和笔宽。0 关闭结构变化，自然度为 0 时停用。</p>
   <label>圆珠笔粗细 <output for="penWidth"></output><input id="penWidth" data-setting type="range" min="0.4" max="2" step="0.05" value="1"></label>
   <label>墨色深浅 <output for="pressure"></output><input id="pressure" data-setting type="range" min="0" max="100" value="30"></label>
   <p class="hint">先以同一笔宽绘制正文、公式和表格，再加入笔势扰动。自然度不再改变粗细，墨色只控制深浅。</p>
@@ -25,6 +31,13 @@
     <label>行距 <output for="lineHeight"></output><input id="lineHeight" data-setting type="range" min="1.2" max="2.6" step="0.05" value="1.65"></label>
     <label>左右留白 <output for="marginX"></output><input id="marginX" data-setting type="range" min="20" max="150" value="62"></label>
     <label>上下留白 <output for="marginY"></output><input id="marginY" data-setting type="range" min="20" max="180" value="65"></label>
+  </details>
+  <details open><summary>固定版式与分栏</summary>
+    <label>版式<select id="layout-preset"><option value="1">单栏 · 常规作业</option><option value="2">双栏 · 演算笔记</option><option value="3">三栏 · 紧凑速记</option><option value="4">四栏 · 横版摘记</option><option value="notes">侧栏批注 · 左侧留白</option><option value="cornell">康奈尔笔记 · 提示与总结区</option></select></label>
+    <label>栏数 <output for="columns"></output><input id="columns" data-setting type="range" min="1" max="4" step="1" value="1"></label>
+    <label>栏间距（mm） <output for="columnGap"></output><input id="columnGap" data-setting type="range" min="0" max="30" step="1" value="10"></label>
+    <label>分隔线<select id="columnRule" data-setting><option value="none">无分隔线</option><option value="line">浅色实线</option><option value="dashed">浅色虚线</option></select></label>
+    <p class="hint" id="layout-note">先写左栏，再写右栏；字号不变，公式按栏宽适配。</p>
   </details>
   <details><summary>涂改与漏墨</summary>
     <label>涂改笔势<select id="scribble" data-setting><option value="mixed">自然混合</option><option value="strike">随手划线</option><option value="loop">连续圈划</option><option value="cross">交叉划除</option><option value="dense">反复覆盖</option></select></label>
@@ -45,8 +58,8 @@
     <button class="subtle" id="clear-background">移除图片背景</button>
     <p class="hint">背景裁剪跟随纸张比例，预览与导出使用同一张图。更改比例后，背景会居中铺满，可重新裁剪调整。切换纸张会保留上传图。真实照片自带光影，选择“清晰扫描”可保留原貌。</p>
   </details>
-  <details><summary>表格与图片</summary><label>表格边线<select id="tableStyle" data-setting><option value="hand">手绘线条</option><option value="ruled">规整描线</option><option value="minimal">三线表</option></select></label><label class="upload-label">插入图片<input type="file" id="content-image" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label><p class="hint">所有边线使用统一笔宽并保留手绘变化，“规整描线”的弯曲较小。表格按行跨页，自动重复表头。网络图片缓存到本机；本地图片用上方按钮导入。</p></details>
-  <details><summary>输入说明</summary><p class="hint">支持标题、嵌套列表、任务列表、引用、表格、代码、图片和脚注。用 <code>$…$</code> 写行内公式，<code>$$…$$</code> 写独立公式，支持 aligned、cases、矩阵。单独一行 <code>---</code> 主动分页并分段。链接保留文字，代码保留缩进。</p><button id="load-example" class="subtle">载入排版示例</button></details>
+  <details><summary>表格与图片</summary><label>表格边线<select id="tableStyle" data-setting><option value="hand">手绘线条</option><option value="ruled">规整描线</option><option value="minimal">三线表</option></select></label><label class="upload-label">插入图片<input type="file" id="content-image" accept="image/png,image/jpeg,image/webp,image/gif" hidden></label><p class="hint">所有边线使用统一笔宽并保留手绘变化，“规整描线”的弯曲较小。表格按行跨页，自动重复表头。网络图片需允许跨域访问；本地图片用上方按钮导入。</p></details>
+  <details><summary>输入说明</summary><p class="hint">支持标题、嵌套列表、任务列表、引用、表格、代码、图片和脚注。用 <code>$…$</code> 写行内公式，<code>$$…$$</code> 写独立公式，支持 aligned、cases、矩阵。单独一行 <code>---</code> 主动分页并分段；<code>&lt;!-- columnbreak --&gt;</code> 从下一栏继续（最后一栏则换页）。链接保留文字，代码保留缩进。</p><button id="load-example" class="subtle">载入排版示例</button></details>
 </aside>
 <section class="editor-pane"><div class="pane-heading"><strong>Markdown</strong><span id="character-count"></span></div><textarea id="source" aria-label="Markdown 源稿" spellcheck="false" placeholder="在这里写下正文与公式…"></textarea><div class="editor-footer"><span>源稿自动保存到此浏览器</span><span>Ctrl + Enter 更新</span></div></section>
 <section class="preview-pane"><div class="pane-heading"><strong>纸面预览</strong><span id="layout-status" role="status">准备排版</span><button id="refresh">更新预览</button></div>
@@ -63,7 +76,7 @@
 </div>
 <div id="warnings" role="status" hidden></div><div class="preview-scroll" tabindex="0" aria-label="纸面预览，可滚动查看，Ctrl 加滚轮缩放"><div id="paper-wrap"><div id="paper-host"></div></div><div id="empty-state" hidden>开始输入，生成你的第一张手写纸。</div></div><nav class="page-nav" aria-label="预览翻页"><button id="prev-page" aria-label="上一页">←</button><span id="page-label">0 / 0</span><button id="next-page" aria-label="下一页">→</button><span class="hint" id="preview-note">A4 · 当前页预览</span></nav></section>
 </main>
-<aside id="jobs-panel" class="jobs-panel" hidden><div class="pane-heading"><strong>导出记录</strong><button id="jobs-close" aria-label="关闭导出记录">×</button></div><p class="job-intro">导出在此浏览器内进行，请保持页面打开。关闭或刷新会停止任务；重新打开后可手动继续，已生成的页面会保留。</p><div id="jobs-list"></div></aside>
+<aside id="jobs-panel" class="jobs-panel" hidden><div class="pane-heading"><strong>导出记录</strong><button id="jobs-close" aria-label="关闭导出记录">×</button></div><p class="job-intro">导出时请保持网页打开。关闭或刷新后，可从这里继续未完成任务。</p><div id="jobs-list"></div></aside>
 <dialog id="paper-crop-dialog" aria-labelledby="crop-title" aria-describedby="crop-help">
   <div class="dialog-heading"><div><h2 id="crop-title">裁剪纸张背景</h2><p id="crop-help">拖动图片调整位置，滚轮或滑杆缩放。</p></div><button type="button" id="crop-close" aria-label="关闭裁剪">×</button></div>
   <div class="crop-stage"><canvas id="crop-canvas" width="800" height="1131" tabindex="0" aria-label="裁剪预览，方向键移动图片，加减键缩放"></canvas><span class="crop-ratio" aria-hidden="true"></span></div>
@@ -71,6 +84,6 @@
   <p class="crop-note">框内区域将铺满纸面。保留导入图，可随时重新裁剪。</p>
   <div class="crop-actions"><button type="button" id="crop-cancel">取消</button><button type="button" id="crop-apply" class="primary">使用此裁剪</button></div>
 </dialog>
-<dialog id="export-dialog"><form id="export-form"><div class="dialog-heading"><h2>导出手写稿</h2><button type="button" id="export-close" aria-label="关闭">×</button></div><label>文件名<input id="filename" value="手写作业" required maxlength="80"></label><label>格式<select id="format"><option value="pdf">PDF 文档</option><option value="zip">逐页 JPG · ZIP</option><option value="longzip">按 --- 分段长图 · ZIP</option></select></label><label>清晰度<select id="quality"><option value="1">快速 · 800 像素宽</option><option value="2" selected>清晰 · 1600 像素宽</option><option value="3">精细 · 2400 像素宽</option></select></label><p class="hint">导出时请保持页面打开，切到后台可能变慢或暂停。关闭后可从导出记录继续。文稿、导入字体和导出文件保存在此浏览器，请及时下载备份；清理浏览器数据会删除它们。</p><button class="primary" type="submit" id="submit-export">开始导出</button></form></dialog>
+<dialog id="export-dialog"><form id="export-form"><div class="dialog-heading"><h2>导出手写稿</h2><button type="button" id="export-close" aria-label="关闭">×</button></div><label>文件名<input id="filename" value="手写作业" required maxlength="80"></label><label>格式<select id="format"><option value="pdf">PDF 文档</option><option value="zip">逐页 JPG · ZIP</option><option value="longzip">按 --- 分段长图 · ZIP</option></select></label><label>清晰度<select id="quality"><option value="1">快速 · 800 像素宽</option><option value="2" selected>清晰 · 1600 像素宽</option><option value="3">精细 · 2400 像素宽</option></select></label><p class="hint">导出在当前浏览器中进行，请保持页面打开。后台标签可能被限速；关闭、刷新或休眠后，可重新打开继续任务。长图过长时自动拆分。</p><button class="primary" type="submit" id="submit-export">开始导出</button></form></dialog>
 <div id="toast" role="status" hidden></div><div id="layout-stage" class="paper-content" aria-hidden="true"></div>
 </body></html>

@@ -39,7 +39,7 @@ $$
 
 - 分数线保持连续，不添加锯齿滤镜。
 - 矩阵与大括号作为完整公式参与排版。
-- 导出时保持此页面打开；关闭后可从导出记录手动继续。
+- 导出时保持网页打开，关闭后可从导出记录继续。
 
 | 项目 | 结论 |
 | --- | --- |
@@ -51,6 +51,8 @@ $$
     function controls(){
         for(const el of document.querySelectorAll('[data-setting]')){el.value=settings[el.id];const output=document.querySelector(`output[for="${el.id}"]`);if(output)output.textContent=el.value;}
         const size=C.pageSize(settings);$('page-format').value=size.preset;
+        const areas=C.writingAreas(settings,size);$('layout-preset').value=settings.layoutMode==='columns'?String(settings.columns):settings.layoutMode;$('columns').disabled=settings.layoutMode!=='columns';
+        $('layout-note').textContent=settings.layoutMode==='columns'?`实际 ${areas.columns} 栏，每栏约 ${(areas.columnWidth*210/800).toFixed(1)} mm。先写满左栏再写右栏；字号不变，完整公式按栏宽适配。`:`正文区约 ${(areas.columnWidth*210/800).toFixed(1)} mm 宽。左侧${settings.layoutMode==='cornell'?'及底部总结区':''}留白，可手写补充或通过自由编辑拖入内容。`;
         $('page-width').value=size.widthMM;$('page-height').value=size.heightMM;
         $('page-size-note').textContent=`宽高 50–420 mm · 排版区约 ${(size.contentWidth*210/800).toFixed(1)} × ${(size.contentHeight*210/800).toFixed(1)} mm。字号保持不变，自动重新分页。`;
         for(const option of $('quality').options)option.textContent=`${{1:'快速',2:'清晰',3:'精细'}[option.value]} · ${size.width*Number(option.value)} × ${size.height*Number(option.value)} 像素`;
@@ -80,6 +82,8 @@ $$
             renderedRevision=current;
             $('layout-status').textContent=`${result.pages.length}${result.truncated?'+':''} 页 · ${((performance.now()-started)/1000).toFixed(1)} 秒`;
             $('warnings').textContent=result.warnings.join(' ');$('warnings').hidden=!result.warnings.length;
+            const fallbackItems=result.fontFallbacks||[],supplemented=fallbackItems.filter(i=>i.kind!=='unresolved'),unresolved=fallbackItems.filter(i=>i.kind==='unresolved');
+            $('fallback-status').textContent=options.fallbackStyle==='original'?'正在沿用原处理。缺字仍可能使用系统字体。':supplemented.length?`已补充 ${supplemented.reduce((sum,i)=>sum+i.count,0)} 个字形：${supplemented.map(i=>i.char).join(' ').slice(0,64)}${unresolved.length?'；有未处理字符，请查看预览提示。':''}`:'只处理缺字和默认符号，保留所选字体已有字形。';
             const size=C.pageSize(result.settings);$('preview-note').textContent=`${size.widthMM} × ${size.heightMM} mm${result.truncated?' · 预览前 12 页':''}`;
         }catch(error){if(error.message!=='LAYOUT_CANCELED'){renderError=error;$('layout-status').textContent='排版失败';toast(error.message);console.error(error);}}
         if(revision===current)break;
@@ -100,8 +104,7 @@ $$
             host.append(card);
         }
     }catch(error){$('save-status').textContent='浏览器存储暂不可用';}finally{setTimeout(poll,1500);}}
-    async function fonts(){const list=await api('/md2handwriting/api/fonts');const names={'ChenYuluoyan-2.0-Thin.ttf':'辰宇落雁体','HongLeiZhuoShuJianTi-2.ttf':'洪雷拙书','LiXuKeJingDianXingShu-2.ttf':'李旭科行书','Yozai-Medium.ttf':'悠哉字体','FanMengWenRouNaiLaoTi-2.ttf':'温柔奶酪体','handwritten-fixed.ttf':'默认手写体（修复版）'};for(const [id,items] of [['font',list.text],['mathFont',list.math]]){const select=$(id);select.replaceChildren();if(id==='mathFont')select.add(new Option('标准数学字形',''));for(const file of items){if(file==='handwritten.ttf')continue;select.add(new Option(names[file]||file.replace(/\.(ttf|otf|woff2?)$/i,''),file));}}controls();StudioFontPicker.attach('font');StudioFontPicker.attach('mathFont');}
-    async function uploadFont(input,type){const file=input.files[0];if(!file)return;try{toast('正在导入字体…');const data=await dataURL(file);const response=await api('/md2handwriting/api/font',{method:'POST',body:JSON.stringify({name:file.name,type,base64:data.split(',')[1]})});await fonts();settings[type==='math'?'mathFont':'font']=response.name;controls();schedule();toast('字体已保存到此浏览器');}catch(e){toast(e.message);}input.value='';}
+    async function fonts(){const list=await api('/md2handwriting/api/fonts');const names={'ChenYuluoyan-2.0-Thin.ttf':'辰宇落雁体','HongLeiZhuoShuJianTi-2.ttf':'洪雷拙书','LiXuKeJingDianXingShu-2.ttf':'李旭科行书','Yozai-Medium.ttf':'悠哉字体','FanMengWenRouNaiLaoTi-2.ttf':'温柔奶酪体','handwritten-fixed.ttf':'默认手写体（修复版）'};for(const [id,items] of [['font',list.text],['mathFont',list.math]]){const select=$(id);select.replaceChildren();if(id==='mathFont')select.add(new Option('标准数学字形',''));for(const file of items){if(file==='handwritten.ttf')continue;select.add(new Option(list.labels?.[id==='font'?'text':'math']?.[file]||names[file]||file.replace(/\.(ttf|otf|woff2?)$/i,'').replace(/__[a-f0-9]{12,64}$/i,''),file));}}controls();StudioFontPicker.attach('font');StudioFontPicker.attach('mathFont');}
     const dataURL=file=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(file);});
     function download(blob,name){const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);}
     $('source').addEventListener('input',schedule);
@@ -112,6 +115,7 @@ $$
         input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
     }
     $('page-rotate').onclick=()=>setPageSize(settings.pageHeight,settings.pageWidth);
+    $('layout-preset').onchange=()=>{const value=$('layout-preset').value,notes=['notes','cornell'].includes(value);settings=C.settings({...settings,layoutMode:notes?value:'columns',...(notes&&settings.columnRule==='none'?{columnRule:'line'}:{}),...(/^\d$/.test(value)?{columns:Number(value)}:{})});controls();schedule();};
     for(const el of document.querySelectorAll('[data-setting]'))el.addEventListener('input',()=>{if(el.id==='paper')backgroundRevision++;settings=C.settings({...settings,[el.id]:el.type==='range'?Number(el.value):el.value});controls();schedule();});
     $('new-seed').onclick=()=>{settings.seed=1+Math.floor(Math.random()*2147483646);schedule();};
     $('refresh').onclick=()=>{revision++;clearTimeout(renderTimer);save();render();};
@@ -129,7 +133,7 @@ $$
             await api('/md2handwriting/api/jobs',{method:'POST',body:JSON.stringify({...document,filename:$('filename').value,format:$('format').value})});$('export-dialog').close();$('jobs-panel').hidden=false;toast('正在浏览器中导出，请保持页面打开');
         }catch(error){toast(error.message);}finally{button.disabled=false;button.textContent='开始导出';}
     };
-    $('font-file').onchange=()=>uploadFont($('font-file'),'text');$('math-font-file').onchange=()=>uploadFont($('math-font-file'),'math');
+    StudioFontImport.init({refresh:fonts,current:type=>settings[type==='math'?'mathFont':'font'],choose:async(type,name)=>{await fonts();settings=C.settings({...settings,[type==='math'?'mathFont':'font']:name});controls();schedule();}});
     $('content-image').onchange=async()=>{const file=$('content-image').files[0];if(!file)return;try{const data=await dataURL(file);const asset=await api('/md2handwriting/api/image',{method:'POST',body:JSON.stringify({base64:data.split(',')[1]})});const source=$('source'),insert=`\n\n![${file.name.replace(/[\[\]]/g,'')}](${asset.url})\n\n`;source.setRangeText(insert,source.selectionStart,source.selectionEnd,'end');schedule();}catch(error){toast(error.message);}$('content-image').value='';};
     async function setBackground(input,crop){const request=++backgroundRevision;
         try{const chosen=await StudioPaperCrop.open(input,crop,()=>request===backgroundRevision,settings);

@@ -1,6 +1,6 @@
 {
   "name": "md2handwriting-pages",
-  "version": "2.2.2-web.1",
+  "version": "2.7.1-web.1",
   "private": true,
   "description": "Browser-only GitHub Pages edition",
   "devDependencies": {

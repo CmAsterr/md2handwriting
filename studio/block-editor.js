@@ -57,7 +57,8 @@ window.StudioEditor=(()=>{
             const v=g.views[0],a=v.rotation*Math.PI/180,local=dx*Math.cos(a)+dy*Math.sin(a),factor=v.scale*v.stretchX;
             const width=Math.max(20,Math.min(840,(v.width+(g.mode==='e'?local:-local))/factor/B.PX)),origin=g.mode==='w'?B.point(v,v.width-width*B.PX*factor,0):v;
             next.blocks[g.blocks[0].id]={...next.blocks[g.blocks[0].id],width,x:origin.x/B.PX,y:origin.y/B.PX};delete next.blocks[g.blocks[0].id].dx;delete next.blocks[g.blocks[0].id].dy;g.next=next;
-            if(!force&&performance.now()-(g.lastReflow||0)<60)return;g.lastReflow=performance.now();
+            clearTimeout(g.reflowTimer);const remaining=60-(performance.now()-(g.lastReflow||0));
+            if(!force&&remaining>0){g.reflowTimer=setTimeout(()=>{if(gesture===g&&g.lastEvent)updateGesture(g.lastEvent,true);},remaining);return;}g.lastReflow=performance.now();
             g.reflowBlock=StudioLayout.reflow(g.blocks[0],width,result);
             const shell=host.querySelector(`[data-block-id="${g.blocks[0].id}"]`);if(shell)StudioLayout.mountBlock(shell,g.reflowBlock,{...result,layout:next});
             draw(next);$('block-width').value=Number(width.toFixed(2));return;
@@ -84,7 +85,7 @@ window.StudioEditor=(()=>{
         viewport.setPointerCapture(event.pointerId);document.body.classList.add('transforming-block');
     },true);
     viewport.addEventListener('pointermove',event=>{if(!gesture||gesture.pointer!==event.pointerId)return;pending=event;if(!frame)frame=requestAnimationFrame(()=>{frame=0;const e=pending;pending=null;if(e)updateGesture(e);});},true);
-    function finish(event,cancel=false){if(!gesture||event&&gesture.pointer!==event.pointerId)return;if(frame){cancelAnimationFrame(frame);frame=0;}const last=pending||(gesture.reflow?gesture.lastEvent:null);if(last&&!cancel)updateGesture(last,true);pending=null;const g=gesture;gesture=null;document.body.classList.remove('transforming-block');if(viewport.hasPointerCapture(g.pointer))viewport.releasePointerCapture(g.pointer);
+    function finish(event,cancel=false){if(!gesture||event&&gesture.pointer!==event.pointerId)return;if(frame){cancelAnimationFrame(frame);frame=0;}clearTimeout(gesture.reflowTimer);const last=pending||(gesture.reflow?gesture.lastEvent:null);if(last&&!cancel)updateGesture(last,true);pending=null;const g=gesture;gesture=null;document.body.classList.remove('transforming-block');if(viewport.hasPointerCapture(g.pointer))viewport.releasePointerCapture(g.pointer);
         if(g.reflowBlock){if(cancel){const shell=host.querySelector(`[data-block-id="${g.blocks[0].id}"]`);if(shell)StudioLayout.mountBlock(shell,g.blocks[0],{...result,layout:g.before});}else Object.assign(g.blocks[0],g.reflowBlock);}
         if(cancel)live(g.before);else if(g.next)commit(g.next);draw();properties();}
     viewport.addEventListener('pointerup',event=>finish(event),true);viewport.addEventListener('pointercancel',event=>finish(event,true),true);viewport.addEventListener('lostpointercapture',event=>finish(event,true),true);

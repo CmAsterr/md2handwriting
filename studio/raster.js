@@ -11,7 +11,7 @@ window.StudioRaster=(()=>{
         for(const element of clone.querySelectorAll('img,feImage')){const attr=element.tagName.toLowerCase()==='img'?'src':'href',url=element.getAttribute(attr);if(url&&!url.startsWith('#'))element.setAttribute(attr,await dataURL(url));}
         // Only the used reusable glyph definitions are embedded in the bitmap.
         const defs=document.createElementNS('http://www.w3.org/2000/svg','svg');defs.setAttribute('width','0');defs.setAttribute('height','0');defs.style.position='absolute';const holder=document.createElementNS(defs.namespaceURI,'defs');defs.append(holder);
-        const refs=new Set([...clone.querySelectorAll('use')].map(e=>e.getAttribute('href')).filter(h=>h?.startsWith('#')));for(const id of refs){const original=document.getElementById(id.slice(1));if(original)holder.append(original.cloneNode(true));}clone.prepend(defs);
+        PenFonts.ensure(clone);const refs=new Set([...clone.querySelectorAll('use')].map(e=>e.getAttribute('href')).filter(h=>h?.startsWith('#')));for(const id of refs){const original=document.getElementById(id.slice(1));if(original)holder.append(original.cloneNode(true));}clone.prepend(defs);
         const width=Math.ceil(block.width+PAD*2),height=Math.ceil(block.height+PAD*2),canvas=document.createElement('canvas');canvas.width=Math.ceil(width*ratio);canvas.height=Math.ceil(height*ratio);
         if(canvas.width*canvas.height>18000000)throw Error('内容块过大，保留矢量预览');
         const css=await stylesheet(),wrap=document.createElement('div');wrap.setAttribute('xmlns','http://www.w3.org/1999/xhtml');wrap.style.cssText=`padding:${PAD}px;width:${width}px;height:${height}px;overflow:hidden`;wrap.append(clone);

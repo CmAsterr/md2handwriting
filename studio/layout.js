@@ -34,7 +34,7 @@ window.StudioLayout = (() => {
         let src=Object.hasOwn(sourceImages,t.href)?sourceImages[t.href]:t.href;
         if(/^https?:\/\//.test(src))src=src;
         else if(!/^data:image\/(?:png|jpeg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(src)&&!/^\/assets\/[a-f0-9]+\.jpg$/.test(src))return `<span class="missing-image">[图片：${C.escape(t.text||src)}，请使用“插入图片”导入本地文件]</span>`;
-        return `<img class="md-image" crossorigin="anonymous" src="${C.escape(src)}" alt="${C.escape(t.text)}">`;
+        return `<img class="md-image" src="${C.escape(src)}" alt="${C.escape(t.text)}">`;
     },link(t){return this.parser.parseInline(t.tokens);}}});
 
     function flow(source,images={}) {
@@ -43,6 +43,7 @@ window.StudioLayout = (() => {
         function visit(items,depth=0) {
             for(const t of items) {
                 if(t.type==='space')continue;
+                if(t.type==='html'&&/^\s*<!--\s*columnbreak\s*-->\s*$/i.test(t.raw)){blocks.push({columnBreak:true});continue;}
                 if(t.type==='hr'){blocks.push({break:true});continue;}
                 if(t.type==='list'){
                     t.items.forEach((item,i)=>{
@@ -76,8 +77,8 @@ window.StudioLayout = (() => {
         return family;
     }
     function paperStyle(s,family) {
-        const image=C.paperImage(s),size=C.pageSize(s);
-        return `width:${size.width}px;height:${size.height}px;--content-height:${size.contentHeight-16}px;--hand-font:"${family}";--size:${s.fontSize}px;--leading:${s.lineHeight};--math-size:${s.mathSize};--pen-width:${s.penWidth}px;--light:${s.light/100};--texture:${s.texture/100};padding:${size.marginY}px ${size.marginX}px;${image?`background-image:url('${image}');background-size:cover;background-position:center center;background-repeat:no-repeat;`:''}`;
+        const image=C.paperImage(s),size=C.pageSize(s),areas=C.writingAreas(s,size);
+        return `width:${size.width}px;height:${size.height}px;--content-height:${areas.height-16}px;--hand-font:"${family}";--size:${s.fontSize}px;--leading:${s.lineHeight};--math-size:${s.mathSize};--pen-width:${s.penWidth}px;--light:${s.light/100};--texture:${s.texture/100};padding:${size.marginY}px ${size.marginX}px;${image?`background-image:url('${image}');background-size:cover;background-position:center center;background-repeat:no-repeat;`:''}`;
     }
     async function math(root,s,warnings) {
         if(!root.querySelector('.math'))return;
@@ -110,6 +111,7 @@ window.StudioLayout = (() => {
                 const replacement=document.createElementNS('http://www.w3.org/2000/svg','path');replacement.setAttribute('d',g.centerline||g.path);
                 if(g.centerline)replacement.dataset.centerline='true';
                 replacement.dataset.handGlyph='true';
+                replacement.dataset.handChar=ch;
                 if(code>=0x1d400&&code<=0x1d433)replacement.dataset.handBold='true';
                 const scale=Math.min(bbox.width/Math.max(g.width,1),bbox.height/Math.max(g.height,1));
                 replacement.setAttribute('transform',`translate(${bbox.x+(bbox.width-g.width*scale)/2-g.x*scale} ${bbox.y+bbox.height-g.height*scale-g.y*scale}) scale(${scale})`);
@@ -118,8 +120,9 @@ window.StudioLayout = (() => {
                 else p.replaceWith(replacement);
             }
         }
-        await PenFonts.normalizeText(root,s.font,warnings);
-        await PenFonts.normalizeMath(root);
+        await PenFonts.supplementMath(root,s);
+        await PenFonts.normalizeText(root,s.font,warnings,s);
+        await PenFonts.normalizeMath(root,s);
     }
     function fitTables(root,width,warnings){
         for(const table of root.querySelectorAll('table')){
@@ -139,10 +142,22 @@ window.StudioLayout = (() => {
             if(!span.dataset.baseMathSize)span.dataset.baseMathSize=parseFloat(getComputedStyle(span).fontSize);
             span.style.fontSize=span.dataset.baseMathSize+'px';span.classList.remove('wide-math');
             const drawing=container.querySelector(':scope > svg');
-            const parent=span.closest('td,th,p,h1,h2,h3,h4,h5,h6,pre,.quote,.flow-block')||span.parentElement,style=getComputedStyle(parent);
+            // Inline wrappers (del, textcolor, emphasis, links) have no usable
+            // clientWidth before lettering. Fit to the containing text box instead.
+            let parent=span.closest('td,th')||span.parentElement;
+            while(parent!==root&&parent.parentElement&&(/^(inline|contents)/.test(getComputedStyle(parent).display)||!parent.clientWidth))parent=parent.parentElement;
+            const style=getComputedStyle(parent);
             const inner=Math.min(width,parent.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight));
             const w=(drawing||container).getBoundingClientRect().width,available=Math.max(1,inner-Math.min(8,inner*.08));
             if(w>available){const scale=available/w;span.style.fontSize=`${parseFloat(getComputedStyle(span).fontSize)*scale}px`;span.classList.add('wide-math');warnings.add('超宽公式已按实际宽度缩放。可使用 aligned 分行以保留较大字号。');}
+        }
+    }
+    function fitWords(root,width,warnings){
+        for(const word of root.querySelectorAll('.text-cluster')){
+            word.classList.remove('wide-word');word.dataset.atom='';
+            let parent=word.closest('td,th')||word.parentElement;while(parent!==root&&parent.parentElement&&/^(inline|contents)/.test(getComputedStyle(parent).display))parent=parent.parentElement;
+            const style=getComputedStyle(parent),available=Math.max(1,Math.min(width,parent.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)));
+            if(word.getBoundingClientRect().width>available+.5){word.classList.add('wide-word');delete word.dataset.atom;warnings.add('有单词或连续字符长于栏宽，已在字符间换行；可减少栏数或改用横版。');}
         }
     }
     function splitLines(block,maxHeight) {
@@ -191,53 +206,62 @@ window.StudioLayout = (() => {
     function blockText(block){return(block.textContent+' '+[...block.querySelectorAll('.math')].map(m=>m.dataset.tex).join(' ')+' '+[...block.querySelectorAll('img')].map(i=>i.getAttribute('src')).join(' ')).trim();}
     function blockType(block){return block.querySelector('table')?'table':block.querySelector('pre')?'code':block.querySelector('h1,h2,h3,h4,h5,h6')?'heading':block.querySelector('img')?'image':block.querySelector('.display-math')?'formula':block.querySelector('.quote')?'quote':block.querySelector('.list-line')?'list':'paragraph';}
     async function paginate(source,input={},onProgress=()=>{},isCanceled=()=>false,limit=Infinity,images={},manual={}) {
-        const s=C.settings(input),size=C.pageSize(s),family=await loadFont(s),width=size.contentWidth,maxHeight=size.contentHeight;
+        const s=C.settings(input),size=C.pageSize(s),areas=C.writingAreas(s,size),family=await loadFont(s),width=areas.columnWidth,maxHeight=areas.height;
         await Promise.all([preparePenField(s),preparePaper(s)]);
-        const {background,backgroundSource,backgroundCrop,paper,paperVersion,scene,light,texture,quality,...layoutSettings}=s;const settingsKey=C.hash(JSON.stringify(layoutSettings));
+        const {background,backgroundSource,backgroundCrop,paper,paperVersion,scene,light,texture,quality,fallbackStyle,...layoutSettings}=s;const settingsKey=C.hash(JSON.stringify(layoutSettings));
         const stage=document.getElementById('layout-stage');stage.style.cssText=`width:${width}px;--content-height:${maxHeight-16}px;--hand-font:"${family}";--size:${s.fontSize}px;--leading:${s.lineHeight};--math-size:${s.mathSize};--pen-width:${s.penWidth}px`;
-        const blocks=flow(source,images),pages=[],warnings=new Set(),occurrences=new Map(),layout=StudioBlocks.normalize(manual),counts=new Map(),ids=new Map();let segment=1,parts=[],used=0,truncated=false;
+        const blocks=flow(source,images),pages=[],warnings=new Set(),occurrences=new Map(),layout=StudioBlocks.normalize(manual),counts=new Map(),ids=new Map();let segment=1,parts=[],used=0,column=0,truncated=false;
         for(const spec of blocks)if(spec.html)counts.set(spec.html,(counts.get(spec.html)||0)+1);
         for(const spec of blocks)if(spec.html){const n=ids.get(spec.html)||0;ids.set(spec.html,n+1);spec.baseId=`b-${C.hash(spec.html).toString(36)}-${C.hash('block:'+spec.html).toString(36)}-${counts.get(spec.html)}-${n}`;}
         if(size.marginX<s.marginX||size.marginY<s.marginY)warnings.add('小尺寸纸张已自动缩小留白，保证至少一半纸面可用于排版；字号与笔宽保持原设定。');
-        const finish=()=>{if(parts.length){pages.push({html:parts.map(b=>b.html).join(''),blocks:parts,segment});parts=[];used=0;}};
-        const pack=(block,spec,key,index,autoScale=1)=>{const text=blockText(block),id=`${spec.baseId}-${index}-${C.hash(text).toString(36)}`,type=blockType(block);let blockWidth=width,x=size.marginX;
+        if(areas.columns<areas.requestedColumns)warnings.add(`纸张较窄，实际使用 ${areas.columns} 栏以保留可读宽度；可减少字号或改用横版。`);
+        if(areas.columns>1&&areas.gap<areas.requestedGap-.1)warnings.add('栏间距已缩小以保证每栏的可用宽度。');
+        const finish=()=>{if(parts.length)pages.push({html:parts.map(b=>b.html).join(''),blocks:parts,segment});parts=[];used=0;column=0;};
+        const nextColumn=()=>{if(column+1<areas.columns){column++;used=0;}else finish();};
+        const pack=(block,spec,key,index,autoScale=1)=>{const text=blockText(block),id=`${spec.baseId}-${index}-${C.hash(text).toString(36)}`,type=blockType(block),region=areas.regions[column];let blockWidth=width,x=region.x;
             const picture=type==='image'&&!block.textContent.trim()?block.querySelector('img'):null,formula=type==='formula'?block.querySelector(':scope > .display-math > mjx-container > svg'):null;
-            if(picture||formula){const node=picture||formula,rect=node.getBoundingClientRect(),parent=block.getBoundingClientRect(),padding=picture?0:4;blockWidth=Math.min(width,rect.width+padding*2);x+=(rect.left-parent.left-padding)*autoScale;}
+            if(picture||formula){const node=picture||formula,rect=node.getBoundingClientRect(),parent=block.getBoundingClientRect(),padding=picture?0:4;blockWidth=Math.min(width,rect.width+padding*2);x+=Math.max(0,Math.min(width-blockWidth,rect.left-parent.left-padding))*autoScale;}
             if(type==='heading'){const glyphs=[...block.querySelectorAll('.glyph,.math')];if(glyphs.length){const parent=block.getBoundingClientRect(),right=Math.max(...glyphs.map(g=>g.getBoundingClientRect().right));blockWidth=Math.min(width,Math.ceil(right-parent.left+8));}}
-            return{id,sourceId:spec.baseId,type,text:text.slice(0,120),x,y:size.marginY+used,width:blockWidth,height:block.offsetHeight,autoScale,html:serialize(block,s,key)};};
+            return{id,sourceId:spec.baseId,type,text:text.slice(0,120),column:column+1,x,y:region.y+used,width:blockWidth,height:block.offsetHeight,autoScale,fallbacks:FallbackInk.audit(block),html:serialize(block,s,key)};};
         outer: for(let i=0;i<blocks.length;i++) {
             if(isCanceled())throw new Error('LAYOUT_CANCELED');
             if(pages.length>=limit){truncated=true;break;}
             const spec=blocks[i];if(spec.break){finish();segment++;continue;}
+            if(spec.columnBreak){nextColumn();continue;}
             const occurrence=occurrences.get(spec.html)||0;occurrences.set(spec.html,occurrence+1);
-            const key=`${C.hash(spec.html)}:${settingsKey}:${occurrence}`;let saved=cache.get(key);if(saved?.source!==spec.html)saved=null;
+            const key=`${C.hash(spec.html)}:${settingsKey}:${occurrence}`;const cacheKey=key+':'+s.fallbackStyle;let saved=cache.get(cacheKey);if(saved?.source!==spec.html)saved=null;
             stage.innerHTML=saved?.html||(spec.prepared?spec.html:`<div class="flow-block">${spec.html}</div>`);
+            PenFonts.ensure(stage);PenFonts.prune();
             if(!saved&&!spec.chunked&&!spec.heading&&!spec.atomic){const chunks=paragraphChunks(stage.firstElementChild);if(chunks){blocks.splice(i,1,...chunks.map((chunk,j)=>({...chunk,baseId:spec.baseId+'-c'+j})));i--;continue;}}
             if(!saved&&!spec.prepared) {
                 await Promise.all(Array.from(stage.querySelectorAll('img')).map(async img=>{try{await img.decode();img.width=img.naturalWidth;img.height=img.naturalHeight;}catch{warnings.add('有图片无法载入，已保留图片说明；请检查地址或重新导入。');img.replaceWith(document.createTextNode(`[图片无法载入：${img.alt}]`));}}));
                 if(stage.querySelector('.missing-image'))warnings.add('本地相对路径图片需要通过“插入图片”导入。');
                 fitTables(stage,width,warnings);await math(stage,s,warnings);fitMath(stage,width,warnings);
                 StudioEffects.mathematics(stage,s,`${C.hash(spec.html)}:${occurrence}`);
-                const penFont=await PenFonts.prepare(stage,s.font);
+                PenFonts.applyMathSupplements(stage,s,`${C.hash(spec.html)}:${occurrence}`);
+                FallbackInk.apply(stage,s,`${C.hash(spec.html)}:${occurrence}`);
+                SetSymbols.applyMath(stage,s,`${C.hash(spec.html)}:${occurrence}`);
+                const penFont=await PenFonts.prepare(stage,s.font,s,warnings);
                 StudioEffects.lettering(stage,s,`${spec.html}:${occurrence}`,penFont);
+                fitWords(stage,width,warnings);
                 StudioEffects.rhythm(stage,s,`${C.hash(spec.html)}:${occurrence}`);
                 saved={html:stage.innerHTML,source:spec.html,warnings:Array.from(warnings)};
-                rememberBlock(key,saved);
+                rememberBlock(cacheKey,saved);
             } else if(saved) saved.warnings.forEach(w=>warnings.add(w));
             await Promise.all(Array.from(stage.querySelectorAll('img')).map(img=>img.decode().catch(()=>{})));
             let block=stage.firstElementChild,fragment=0;
             const table=block.querySelector('table');
-            if(spec.heading&&parts.length&&maxHeight-used<block.offsetHeight+s.fontSize*s.lineHeight*2)finish();
+            if(spec.heading&&used>0&&maxHeight-used<block.offsetHeight+s.fontSize*s.lineHeight*2)nextColumn();
             while(block) {
                 if(pages.length>=limit){truncated=true;break outer;}
                 const height=block.offsetHeight+8;
                 if(height<=maxHeight-used){parts.push(pack(block,spec,key,fragment++));used+=height;break;}
                 const split=table?splitTable(block,maxHeight-used):block.querySelector('pre')?splitCode(block,maxHeight-used):(!spec.atomic?splitLines(block,maxHeight-used):null);
-                if(split){stage.replaceChildren(split[0]);parts.push(pack(split[0],spec,key,fragment++));finish();stage.replaceChildren(split[1]);block=split[1];continue;}
-                if(parts.length){finish();continue;}
+                if(split){stage.replaceChildren(split[0]);parts.push(pack(split[0],spec,key,fragment++));nextColumn();stage.replaceChildren(split[1]);block=split[1];continue;}
+                if(used>0){nextColumn();continue;}
                 // An indivisible matrix/cases/code block taller than the paper is scaled as a whole.
                 const scale=Math.min(1,(maxHeight-10)/height);warnings.add('有不可拆分的公式、图片或内容块被整体缩放，以适应当前纸张。');
-                parts.push(pack(block,spec,key,fragment++,scale));finish();break;
+                parts.push(pack(block,spec,key,fragment++,scale));nextColumn();break;
             }
             if(i%6===0){onProgress({done:i+1,total:blocks.length,pages:pages.length+1});await tick();}
         }
@@ -250,17 +274,18 @@ window.StudioLayout = (() => {
         const issues=pages.flatMap((p,page)=>StudioBlocks.issues(p.blocks,layout,size).map(v=>({...v,page:page+1})));
         if(issues.some(i=>i.type==='outside'))warnings.add('有手动内容块超出纸张，导出会按纸张边缘裁切；请调整位置或缩放。');
         if(issues.some(i=>i.type==='overlap'))warnings.add('有手动内容块相互重叠，可进入自由编辑调整。');
-        stage.replaceChildren();
-        return {pages,settings:s,size,family,style:paperStyle(s,family),warnings:Array.from(warnings),truncated,layout,issues};
+        stage.replaceChildren();PenFonts.prune();
+        return {pages,settings:s,size,areas,family,style:paperStyle(s,family),warnings:Array.from(warnings),truncated,layout,issues,fontFallbacks:FallbackInk.summary(pages.flatMap(p=>p.blocks))};
     }
     function reflow(block,widthMM,result,warnings=new Set(),stage=null){
         const ownsStage=!stage,s=result.settings,width=Math.max(20,Math.min(840,widthMM))*StudioBlocks.PX;
         if(ownsStage){stage=document.createElement('div');stage.className='paper-content block-reflow-stage';stage.style.cssText=`--hand-font:"${result.family}";--size:${s.fontSize}px;--leading:${s.lineHeight};--math-size:${s.mathSize};--pen-width:${s.penWidth}px`;document.body.append(stage);}
         try{
-            stage.style.width=width+'px';stage.innerHTML=block.reflowSource||block.html;const node=stage.firstElementChild;
+            stage.style.width=width+'px';stage.innerHTML=block.reflowSource||block.html;PenFonts.ensure(stage);const node=stage.firstElementChild;
             node.querySelectorAll('.decoration-ink,.table-ink').forEach(e=>e.remove());
-            for(const el of node.querySelectorAll('.glyph,.math,.ink-mark')){el.style.translate='';if(el.matches('.math'))el.style.transform='';}
+            for(const el of node.querySelectorAll('.glyph,.math,.ink-mark,.correction')){el.style.translate='';if(el.matches('.math'))el.style.transform='';}
             fitMath(stage,width,warnings);
+            fitWords(stage,width,warnings);
             const angle=node.dataset.writingAngle===undefined?undefined:Number(node.dataset.writingAngle);
             StudioEffects.rhythm(stage,s,block.id,angle);
             return{...block,width,height:node.offsetHeight,html:serialize(node,s,block.id)};
@@ -291,28 +316,31 @@ window.StudioLayout = (() => {
     function mount(result,index,target) {
         target.replaceChildren();const record=result.pages[index];if(!record)return;
         const page=document.createElement('article');page.className=`paper paper-${result.settings.paper} scene-${result.settings.scene}`;page.style.cssText=result.style;
+        const areas=result.areas||C.writingAreas(result.settings,result.size);
+        if(areas.guides.length){const ns='http://www.w3.org/2000/svg',guides=document.createElementNS(ns,'svg');guides.classList.add('paper-guides');guides.setAttribute('viewBox',`0 0 ${result.size.width} ${result.size.height}`);guides.setAttribute('aria-hidden','true');for(const line of areas.guides){const el=document.createElementNS(ns,'line');for(const [key,value] of Object.entries(line))el.setAttribute(key,value);if(result.settings.columnRule==='dashed')el.setAttribute('stroke-dasharray','4 4');guides.append(el);}page.append(guides);}
         const content=document.createElement('div');content.className='paper-content block-page-content';page.append(content);target.append(page);
         for(const block of record.blocks){
-            const shell=document.createElement('div');shell.className='page-block';shell.dataset.blockId=block.id;shell.dataset.blockType=block.type;
+            const shell=document.createElement('div');shell.className='page-block';shell.dataset.blockId=block.id;shell.dataset.blockType=block.type;shell.dataset.column=block.column||1;
             content.append(shell);mountBlock(shell,block,result);
         }
-        return page;
+        PenFonts.prune();return page;
     }
     function mountBlock(shell,block,result){
             const art=document.createElement('div');art.className='block-art';shell.replaceChildren(art);delete shell.dataset.raster;delete shell.dataset.rasterRatio;
             const v=setBlockView(shell,block,result);shell.style.transform='none';
             if(result.settings.naturalness>0){
                 const filterId='text-pen-'+block.id,defs=document.createElementNS('http://www.w3.org/2000/svg','svg');defs.setAttribute('width','0');defs.setAttribute('height','0');defs.style.position='absolute';
-                const n=PenGestures.strength(result.settings),scale=n*Math.min(3.6,result.settings.fontSize*.145),size=result.size;
+                const n=PenGestures.strength(result.settings),scale=n*Math.min(3.6,result.settings.fontSize*.145)*(1-.65*(result.settings.glyphVariation??55)/100),size=result.size;
                 defs.innerHTML=`<filter id="${filterId}" filterUnits="userSpaceOnUse" x="-16" y="-16" width="${block.width+32}" height="${block.height+32}" color-interpolation-filters="sRGB"><feImage href="${fieldURL(result.settings)}" x="-16" y="${-16-(block.y-size.marginY)}" width="${size.contentWidth+32}" height="${size.height+32}" preserveAspectRatio="none" result="pen-field"/><feDisplacementMap in="SourceGraphic" in2="pen-field" scale="${scale}" xChannelSelector="R" yChannelSelector="G"/></filter>`;
                 art.append(defs);const text=document.createElement('div');text.className='text-ink-layer';text.style.filter='url(#'+filterId+')';text.innerHTML=block.html;
-                const structures=document.createElement('div');structures.className='structural-ink-layer';structures.setAttribute('aria-hidden','true');art.append(text,structures);mountStructures(text,structures,art);
-            }else art.innerHTML=block.html;
+                const structures=document.createElement('div');structures.className='structural-ink-layer';structures.setAttribute('aria-hidden','true');art.append(text,structures);PenFonts.ensure(text);mountStructures(text,structures,art);
+            }else{art.innerHTML=block.html;PenFonts.ensure(art);}
             shell.style.transform=`rotate(${v.rotation}deg) scale(${v.scale*v.stretchX},${v.scale*v.stretchY})`;
     }
     function describe(result){const P=StudioBlocks.PX,round=n=>Math.round(n*1000)/1000;
-        return {version:1,units:'mm',paper:{width:result.size.widthMM,height:result.size.heightMM},pages:result.pages.length,warnings:result.warnings,issues:result.issues,layout:result.layout,
-            blocks:result.pages.flatMap((p,index)=>p.blocks.map(b=>{const v=StudioBlocks.view(b,result.layout.blocks[b.id]);return{id:b.id,page:index+1,type:b.type,text:b.text,x:round(v.x/P),y:round(v.y/P),width:round(v.width/P),height:round(v.height/P),scale:round(v.scale/(b.autoScale||1)),stretchX:round(v.stretchX),stretchY:round(v.stretchY),rotation:v.rotation,locked:v.locked,group:v.group,reflowable:StudioBlocks.reflowable(b.type),automatic:{x:round(b.base.x/P),y:round(b.base.y/P),width:round(b.base.width*(b.autoScale||1)/P),height:round(b.base.height*(b.autoScale||1)/P)}};}))};
+        const a=result.areas||C.writingAreas(result.settings,result.size),box=v=>Object.fromEntries(Object.entries(v).map(([k,n])=>[k,['x','y','width','height'].includes(k)?round(n/P):n]));
+        return {version:1,units:'mm',paper:{width:result.size.widthMM,height:result.size.heightMM},writing:{mode:a.mode,columns:a.columns,requestedColumns:a.requestedColumns,gap:round(a.gap/P),regions:a.regions.map(box),reserved:a.reserved.map(box)},pages:result.pages.length,fontFallbacks:result.fontFallbacks||[],warnings:result.warnings,issues:result.issues,layout:result.layout,
+            blocks:result.pages.flatMap((p,index)=>p.blocks.map(b=>{const v=StudioBlocks.view(b,result.layout.blocks[b.id]);return{id:b.id,page:index+1,column:b.column||1,type:b.type,text:b.text,fontFallbacks:b.fallbacks||[],x:round(v.x/P),y:round(v.y/P),width:round(v.width/P),height:round(v.height/P),scale:round(v.scale/(b.autoScale||1)),stretchX:round(v.stretchX),stretchY:round(v.stretchY),rotation:v.rotation,locked:v.locked,group:v.group,reflowable:StudioBlocks.reflowable(b.type),automatic:{x:round(b.base.x/P),y:round(b.base.y/P),width:round(b.base.width*(b.autoScale||1)/P),height:round(b.base.height*(b.autoScale||1)/P)}};}))};
     }
     return {paginate,mount,mountBlock,reflow,flow,describe,setBlockView,mathFonts:new Map(),cacheStats:()=>({blocks:cache.size,bytes:cacheBytes,mathBytes}),clearCache(){cache.clear();mathCache.clear();cacheBytes=0;mathBytes=0;}};
 })();

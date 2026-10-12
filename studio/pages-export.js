@@ -11,7 +11,7 @@ window.PagesExport=(()=>{
     async function dataURL(url){if(url.startsWith('data:'))return url;const absolute=new URL(url,location.href).href;if(!assetCache.has(absolute)){if(assetCache.size>20)assetCache.delete(assetCache.keys().next().value);assetCache.set(absolute,R.nativeFetch(absolute).then(r=>{if(!r.ok)throw Error('图片读取失败');return r.blob();}).then(blob=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error);reader.readAsDataURL(blob);})));}return assetCache.get(absolute);}
     async function inlineURLs(text){for(const m of [...text.matchAll(/url\(['"]?([^'"\)]+)['"]?\)/g)])if(!m[1].startsWith('#'))text=text.replaceAll(m[0],'url("'+await dataURL(m[1])+'")');return text;}
     async function pageCanvas(frame,size,quality){
-        const doc=frame.contentDocument,clone=doc.querySelector('.paper').cloneNode(true),defs=doc.getElementById('monoline-font-defs')?.parentElement.cloneNode(true);if(defs)clone.prepend(defs);clone.style.boxShadow='none';
+        const doc=frame.contentDocument,clone=doc.querySelector('.paper').cloneNode(true);frame.contentWindow.PenFonts.ensure(clone);const defs=doc.getElementById('monoline-font-defs')?.parentElement.cloneNode(true);if(defs)clone.prepend(defs);clone.style.boxShadow='none';
         for(const el of clone.querySelectorAll('img,feImage')){const attr=el.tagName.toLowerCase()==='img'?'src':'href',url=el.getAttribute(attr);if(url&&!url.startsWith('#'))el.setAttribute(attr,await dataURL(url));}
         for(const el of [clone,...clone.querySelectorAll('[style]')])if(el.style.cssText.includes('url('))el.style.cssText=await inlineURLs(el.style.cssText);
         let css=await(await R.nativeFetch(R.asset('studio/style.css'))).text();css=await inlineURLs(css);css+='\n'+[...doc.head.querySelectorAll('style')].map(s=>s.textContent).join('\n')+'\n:root{background:transparent!important}.paper{box-shadow:none!important}';
@@ -24,10 +24,12 @@ window.PagesExport=(()=>{
     async function render(job){
         const start=performance.now(),snapshot=await R.get('snapshot/'+job.id),frame=document.createElement('iframe');let wake;
         try{wake=await navigator.wakeLock?.request('screen').catch(()=>null);check(job);job.status='layout';job.message='正在准备笔迹与分页';await save(job);
+            const build=(await R.version).build;
+            if(job.renderBuild!==build){for(const key of await R.keys('page/'+job.id+'/'))await R.remove(key);job.renderBuild=build;job.percent=0;await save(job);}
             Object.assign(frame.style,{position:'fixed',left:'-30000px',top:'0',border:'0',pointerEvents:'none'});frame.setAttribute('aria-hidden','true');frame.tabIndex=-1;frame.src=R.asset('render.html');await new Promise((resolve,reject)=>{frame.onload=resolve;frame.onerror=()=>reject(Error('导出页面加载失败'));document.body.append(frame);});
             const win=frame.contentWindow;for(let i=0;!win.renderDocument&&i<200;i++)await new Promise(r=>setTimeout(r,50));if(!win.renderDocument)throw Error('导出引擎未能启动，请刷新后继续');
             const size=win.StudioCore.pageSize(snapshot.settings);frame.width=size.width;frame.height=size.height;win.jobProgress=p=>{job.message='排版 '+p.done+'/'+p.total;};
-            const meta=await win.renderDocument(snapshot);check(job);job.total=meta.pages;job.warnings=meta.warnings;job.status='rendering';await save(job);let totalBytes=0;
+            const meta=await win.renderDocument(snapshot);check(job);job.total=meta.pages;job.warnings=meta.warnings;job.fontFallbacks=meta.fontFallbacks||[];job.status='rendering';await save(job);let totalBytes=0;
             for(let i=0;i<meta.pages;i++){check(job);const key='page/'+job.id+'/'+i;let blob=await R.get(key);if(!blob){await win.mountExportPage(i);check(job);const canvas=await pageCanvas(frame,size,snapshot.settings.quality||2);blob=await jpeg(canvas);canvas.width=canvas.height=1;check(job);await R.put(key,blob);}totalBytes+=blob.size;if(totalBytes>220*1024*1024)throw Error('导出内容较大，请分段导出或降低清晰度');job.percent=Math.round((i+1)/meta.pages*90);job.message='已生成 '+(i+1)+' / '+meta.pages+' 页';await save(job);await new Promise(r=>setTimeout(r,0));}
             check(job);job.status='packaging';job.message='正在打包文件';await save(job);let output;
             if(job.format==='pdf'){

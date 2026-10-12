@@ -10,7 +10,10 @@ window.StudioEffects = (() => {
         const s = svg(w,h); s.classList.add('scribble-overlay');
         if (type === 'mixed') type = ['strike','loop','cross','dense'][Math.floor(source()*4)];
         if (type === 'strike' || type === 'cross') {
-            const y = h*(.38+r()*.2);
+            // Aim through the visible writing, not the line box's leading above it.
+            const box=el.getBoundingClientRect(),marks=[...el.querySelectorAll('.monoline-glyph use,.math [data-mml-node="math"]')].map(e=>e.getBoundingClientRect()).filter(b=>b.height>0);
+            const top=marks.length?Math.min(...marks.map(b=>b.top))-box.top:h*.25,bottom=marks.length?Math.max(...marks.map(b=>b.bottom))-box.top:h*.8;
+            const y=Math.max(2,Math.min(h-2,(top+bottom)/2+(r()-.5)*(bottom-top)*.18));
             path(s,`M-2 ${y} C${w*.25} ${y-2} ${w*.7} ${y+2} ${w+3} ${y-1}`,1.2+r(),.8);
             if (type === 'cross') path(s,`M0 ${h*.8} C${w*.3} ${h*.6} ${w*.6} ${h*.3} ${w+1} ${h*.12}`,1.2+r()*.7,.85);
             else if (r()>.5) path(s,`M0 ${y+4} Q${w*.5} ${y+2} ${w} ${y+3}`,1,.6);
@@ -28,9 +31,9 @@ window.StudioEffects = (() => {
         el.append(s);
         PenInk.warp([...s.querySelectorAll('path')],settings,source,'correction',{factory:b=>PenGestures.field(b,settings,source,{math:false,gain:.7,limitX:1.4,limitY:1.4})});
     }
-    function ink(el,seed,type) {
+    function ink(el,seed,type,settings) {
         const r=random(seed); if(type==='mixed') type=['drop','splash','drag','dry'][Math.floor(r()*4)];
-        const s=svg(70,45); s.classList.add('ink-art');
+        const s=svg(70,45); s.classList.add('ink-art');s.style.transform=`scale(${settings.inkScale??1})`;s.style.transformOrigin='23px 22px';
         if(type==='dry'||type==='drag') {
             for(let i=0;i<12;i++) { const y=18+r()*11; path(s,`M${8+r()*10} ${y} Q35 ${y+r()*4} ${40+r()*26} ${y-4+r()*7}`, .3+r()*1.7, .12+r()*.42, false); }
         }
@@ -62,19 +65,28 @@ window.StudioEffects = (() => {
         }
         const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT); const nodes=[];let node;
         while((node=walker.nextNode())) if(!node.parentElement.closest('.math, pre, code, .ink-mark, svg, [data-ink-marker]')) nodes.push(node);
-        const segmenter=new Intl.Segmenter('zh',{granularity:'grapheme'}); let index=0;
+        const segmenter=new Intl.Segmenter('zh',{granularity:'grapheme'}),latin=/^[\p{Script=Latin}\p{M}0-9]+$/u,occurrences=new Map(),variantAmount=PenVariants.amount(settings); let index=0;
         for(const text of nodes) {
             if(!text.data.trim()&&text.data.includes('\n')){text.remove();continue;}
-            const fragment=document.createDocumentFragment();
-            for(const {segment} of segmenter.segment(text.data)) {
+            const fragment=document.createDocumentFragment(),segments=[...segmenter.segment(text.data)].map(s=>s.segment);let word=null;
+            for(let at=0;at<segments.length;at++) {const segment=segments[at],letter=latin.test(segment),connector=/^['’\-]$/.test(segment)&&latin.test(segments[at-1]||'')&&latin.test(segments[at+1]||''),optical=letter||connector||/^[.,;:!?()\[\]"'’“”\-]$/.test(segment);
                 if(segment==='\n'){ fragment.append(document.createTextNode(' '));continue; }
+                if(/^[ \t]$/.test(segment)){const space=document.createElement('span');space.className='word-space';space.textContent=' ';fragment.append(space);word=null;index++;continue;}
                 const r=random(`${settings.seed}:${key}:${index}`); const span=document.createElement('span');span.className='glyph';span.dataset.atom='';
-                const glyph=PenFonts.glyphElement(segment,penFont);if(glyph)span.append(glyph);else span.textContent=segment;
+                const occurrence=occurrences.get(segment)||0;occurrences.set(segment,occurrence+1);
+                const variation={seed:settings.seed,amount:variantAmount,naturalness:settings.naturalness,style:settings.glyphStyle,fontSize:settings.fontSize,penWidth:settings.penWidth,fallbackStyle:settings.fallbackStyle,slot:PenVariants.slot(settings.seed,key,segment,occurrence)};
+                const glyph=PenFonts.glyphElement(segment,penFont,optical,variation);if(glyph)span.append(glyph);else{span.textContent=segment;span.dataset.inkFallback='unresolved';span.dataset.inkChar=segment;}
                 // Slow drift + small individual variation, bounded so glyphs cannot collide.
                 const wave=Math.sin(index*.32+(StudioCore.hash(key)%100)),size=settings.fontSize/27;
                 span.style.transform=`translate(${((r()-.5)*.6*n*size).toFixed(2)}px,${((wave*2.3+(r()-.5)*1.3)*n*size).toFixed(2)}px) rotate(${((r()-.5)*9*n).toFixed(2)}deg) scale(${(1+(r()-.5)*.12*n).toFixed(3)})`;
                 span.style.opacity=(.62+.36*Math.sqrt(pressure)-n*r()*.025).toFixed(3);
                 span.style.letterSpacing=`${((r()-.5)*1.6*n*size).toFixed(2)}px`;
+                if(letter||connector){
+                    if(!word){const wr=random(`${settings.seed}:${key}:word:${index}`);word={start:index,angle:(wr()-.5)*4,scale:1+(wr()-.5)*.035,phase:wr()*Math.PI*2};}
+                    const local=index-word.start,wr=random(`${settings.seed}:${key}:latin:${index}`);
+                    span.classList.add('latin-glyph');span.style.letterSpacing='0px';
+                    span.style.transform=`translate(${((wr()-.5)*.18*n*size).toFixed(2)}px,${(Math.sin(local*.22+word.phase)*.65*n*size).toFixed(2)}px) rotate(${((word.angle+(wr()-.5)*1.6)*n).toFixed(2)}deg) scale(${(1+(word.scale-1+(wr()-.5)*.018)*n).toFixed(3)})`;
+                }else{word=null;if(optical)span.style.letterSpacing='0px';}
                 fragment.append(span);index++;
             }
             text.replaceWith(fragment);
@@ -85,7 +97,7 @@ window.StudioEffects = (() => {
             if(glyph.closest('.math,.text-cluster'))continue;
             const previous=glyph.previousElementSibling;
             if(previous&&previous.nextSibling===glyph&&/^[，。！？；：、）》】〉”’…,.!?;:%)\]}]$/.test(glyph.textContent))join(previous,glyph);
-            else if(/^[A-Za-z0-9]$/.test(glyph.textContent)&&previous&&previous.nextSibling===glyph&&/^[A-Za-z0-9]{1,23}$/.test(previous.textContent))join(previous,glyph);
+            else if(glyph.classList.contains('latin-glyph')&&previous&&previous.nextSibling===glyph&&/^[\p{Script=Latin}\p{M}0-9'’\-]{1,31}$/u.test(previous.textContent))join(previous,glyph);
         }
         for(const glyph of Array.from(root.querySelectorAll('.glyph'))){
             if(glyph.closest('.text-cluster'))continue;
@@ -93,7 +105,7 @@ window.StudioEffects = (() => {
             if(next&&glyph.nextSibling===next&&/^[（《【〈“‘(\[{]$/.test(glyph.textContent))join(glyph,next);
         }
         root.querySelectorAll('del').forEach((el,i)=>{el.className='correction';el.dataset.atom='';scribble(el,`${settings.seed}:${key}:s${i}`,settings.scribble,settings);});
-        root.querySelectorAll('.ink-mark').forEach((el,i)=>ink(el,`${settings.seed}:${key}:i${i}`,settings.ink));
+        root.querySelectorAll('.ink-mark').forEach((el,i)=>ink(el,`${settings.seed}:${key}:i${i}`,settings.ink,settings));
     }
     function table(block,settings,key) {
         const t=block.querySelector('table');if(!t)return;
@@ -121,7 +133,7 @@ window.StudioEffects = (() => {
         const slope=Math.tan(angle*Math.PI/180),guard=Math.ceil(Math.abs(slope)*width*.25+1.5*n);
         block.style.paddingTop=`${guard}px`;block.style.paddingBottom=`${guard}px`;block.dataset.writingAngle=angle.toFixed(3);
         // Read all positions before writing transforms, avoiding a layout read/write loop.
-        const positions=Array.from(block.querySelectorAll('.glyph,.math,.ink-mark')).map(node=>({node,x:node.offsetLeft,y:node.offsetTop,w:node.offsetWidth}));
+        const positions=Array.from(block.querySelectorAll('.glyph,.math,.ink-mark,.correction')).filter(node=>!node.parentElement.closest('.correction')).map(node=>({node,x:node.offsetLeft,y:node.offsetTop,w:node.offsetWidth}));
         for(const {node,x,y,w} of positions){
             if(node.matches('.display-math,.wide-math')){
                 node.style.transform=`rotate(${(angle*.65).toFixed(3)}deg)`;node.style.transformOrigin='50% 50%';

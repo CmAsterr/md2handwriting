@@ -14,6 +14,7 @@ window.StudioFontPicker = (() => {
     function attach(id) {
         const select = document.getElementById(id);
         if (!select) return;
+        const previous=pickers.get(id),state=previous?{open:!previous.panel.hidden,search:previous.search.value,scroll:previous.list.scrollTop}:null;
         pickers.get(id)?.observer.disconnect();
         pickers.get(id)?.host.remove();
         select.hidden = true;
@@ -62,7 +63,8 @@ window.StudioFontPicker = (() => {
             event.preventDefault();event.stopPropagation();size(event.key==='Home'?202:event.key==='End'?maxHeight():listHeight+(event.key==='ArrowDown'?1:-1)*(event.shiftKey?64:16));persist();
         };
         header.append(search, collapse); panel.append(header, list, resizer); host.append(trigger, panel); select.after(host);
-        pickers.set(id, {host, trigger, list, observer, close, value: null}); sync(id);
+        pickers.set(id, {host, trigger, panel, search, list, observer, close, value: null}); sync(id);
+        if(state){search.value=state.search;search.oninput();panel.hidden=!state.open;trigger.setAttribute('aria-expanded',String(state.open));list.scrollTop=state.scroll;}
     }
     function sync(id) {
         const picker = pickers.get(id), select = document.getElementById(id); if (!picker || !select) return;
